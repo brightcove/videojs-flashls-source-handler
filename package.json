@@ -1,6 +1,6 @@
 {
   "name": "@brightcove/videojs-flashls-source-handler",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "A source handler to integrate flashls with video.js",
   "main": "es5/index.js",
   "generator-videojs-plugin": {
