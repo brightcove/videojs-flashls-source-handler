@@ -1,12 +1,15 @@
 module.exports = function(config) {
   var detectBrowsers = {
-    enabled: false,
-    usePhantomJS: false
-  };
+      enabled: false,
+      usePhantomJS: false
+    },
+    browsers = config.browsers,
+    reporters = ['dots'];
 
-  // On Travis CI, we can only run in Firefox.
-  if (process.env.TRAVIS) {
-    config.browsers = ['Firefox'];
+  // On TC CI, we can only run in Browserstack.
+  if (process.env.BROWSER_STACK_USERNAME) {
+    browsers = ['chrome_bs'];
+    reporters = ['teamcity'];
   }
 
   // If no browsers are specified, we enable `karma-detect-browsers`
@@ -27,8 +30,19 @@ module.exports = function(config) {
       'test/dist/bundle.js'
     ],
 
+    browsers: browsers,
+
+    customLaunchers: {
+      chrome_bs: {
+        base: 'BrowserStack',
+        browser: 'chrome',
+        os: 'Windows',
+        os_version: '8.1'
+      }
+    },
+
     detectBrowsers: detectBrowsers,
-    reporters: ['dots'],
+    reporters: reporters,
     port: 9876,
     colors: true,
     autoWatch: false,
