@@ -19,7 +19,9 @@
   <script src="/node_modules/video.js/dist/video.js"></script>
   <script src="/dist/videojs-flashls-source-handler.js"></script>
   <script>
-    videojs.options.flash.swf = 'video-js.swf';
+    // force Flash for demo purposes
+    videojs.options.techOrder = ['flash'];
+
     var player = window.player = videojs('videojs-flashls-source-handler-player');
 
     player.src({

@@ -67,6 +67,9 @@ FlashlsSourceHandler.dispose = function() {};
 // any other Flash source handlers for HLS
 videojs.getTech('Flash').registerSourceHandler(FlashlsSourceHandler, 0);
 
+// Use the flashls-enabled version of the video.js SWF
+videojs.options.flash.swf = 'https://players.brightcove.net/videojs-flashls/video-js.swf';
+
 // Include the version number.
 FlashlsSourceHandler.VERSION = '__VERSION__';
 
