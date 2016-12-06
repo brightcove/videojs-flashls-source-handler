@@ -8,6 +8,8 @@ const parseSyncSafeInteger = function(data) {
           (data.charCodeAt(3));
 };
 
+const Cue = window.WebKitDataCue || window.VTTCue;
+
 /*
  * Registers the SWF as a handler for HLS video.
  *
@@ -65,6 +67,20 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
 FlashlsSourceHandler.handleSource = function(source, tech, options) {
   tech.setSrc(source.src);
 
+  tech.on('seeked', () => {
+    if (this.metadataTrack_ &&
+        this.metadataTrack_.cues &&
+        this.metadataTrack_.cues.length) {
+      let i = this.metadataTrack_.cues.length;
+
+      while (i--) {
+        let cue = this.metadataTrack_.cues[i];
+
+        this.metadataTrack_.removeCue(cue);
+      }
+    }
+  });
+
   tech.on('id3updated', (event, data) => {
     const id3tag = window.atob(data[0]);
     let frameStart = 10;
@@ -78,7 +94,6 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
     const frameSize = parseSyncSafeInteger(id3tag.substring(frameStart + 4, frameStart + 8));
 
     if (this.metadataTrack_) {
-      const Cue = window.WebKitDataCue || window.VTTCue;
       const time = tech.currentTime();
       const cue = new Cue(time,
                           time,
