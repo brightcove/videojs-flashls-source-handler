@@ -134,6 +134,8 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
         kind: 'metadata',
         label: 'Timed Metadata'
       }, false).track;
+
+      this.metadataTrack_.inBandMetadataTrackDispatchType = '';
     });
   }
 };
