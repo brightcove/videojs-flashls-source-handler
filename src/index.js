@@ -115,7 +115,10 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
     const _player = videojs(tech.options_.playerId);
 
     _player.ready(() => {
-      this.metadataTrack_ = _player.addTextTrack('metadata', 'Timed Metadata')
+      this.metadataTrack_ = _player.addRemoteTextTrack({
+        kind: 'metadata',
+        label: 'Timed Metadata'
+      }, false).track;
     });
   }
 };
