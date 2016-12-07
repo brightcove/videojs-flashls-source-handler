@@ -1,5 +1,6 @@
 import videojs from 'video.js';
 import window from 'global/window';
+import {Cea608Stream} from 'mux.js/lib/m2ts/caption-stream';
 
 const parseSyncSafeInteger = function(data) {
   return (data.charCodeAt(0) << 21) |
@@ -9,6 +10,77 @@ const parseSyncSafeInteger = function(data) {
 };
 
 const Cue = window.WebKitDataCue || window.VTTCue;
+
+const removeExistingTrack = function(tech, kind, label) {
+  const tracks = tech.remoteTextTracks() || [];
+
+  for (let i = 0; i < tracks.length; i++) {
+    const track = tracks[i];
+
+    if (track.kind === kind && track.label === label) {
+      tech.removeRemoteTextTrack(track);
+    }
+  }
+};
+
+// see CEA-708-D, section 4.4
+const parseCaptionPackets = (pts, userData) => {
+  var results = [], i, count, offset, data;
+
+  // if this is just filler, return immediately
+  if (!(userData[0] & 0x40)) {
+    return results;
+  }
+
+  // parse out the cc_data_1 and cc_data_2 fields
+  count = userData[0] & 0x1f;
+  for (i = 0; i < count; i++) {
+    offset = i * 3;
+    data = {
+      type: userData[offset + 2] & 0x03,
+      pts: pts
+    };
+
+    // capture cc data when cc_valid is 1
+    if (userData[offset + 2] & 0x04) {
+      data.ccData = (userData[offset + 3] << 8) | userData[offset + 4];
+      results.push(data);
+    }
+  }
+  return results;
+};
+
+/**
+ * Remove cues from a track on video.js.
+ *
+ * @param {Double} start start of where we should remove the cue
+ * @param {Double} end end of where the we should remove the cue
+ * @param {Object} track the text track to remove the cues from
+ * @private
+ */
+const removeCuesFromTrack = function(start, end, track) {
+  let i;
+  let cue;
+
+  if (!track) {
+    return;
+  }
+
+  if (!track.cues) {
+    return;
+  }
+
+  i = track.cues.length;
+
+  while (i--) {
+    cue = track.cues[i];
+
+    // Remove any overlapping cue
+    if (cue.startTime <= end && cue.endTime >= start) {
+      track.removeCue(cue);
+    }
+  }
+};
 
 /*
  * Registers the SWF as a handler for HLS video.
@@ -67,6 +139,10 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
 FlashlsSourceHandler.handleSource = function(source, tech, options) {
   tech.setSrc(source.src);
 
+  let cea608Stream = new Cea608Stream();
+  let captionPackets = [];
+  let inbandTextTrack;
+
   tech.on('seeked', () => {
     if (this.metadataTrack_ &&
         this.metadataTrack_.cues &&
@@ -79,6 +155,8 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
         this.metadataTrack_.removeCue(cue);
       }
     }
+
+    removeCuesFromTrack(0, Infinity, inbandTextTrack);
   });
 
   tech.on('id3updated', (event, data) => {
@@ -138,6 +216,58 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
       this.metadataTrack_.inBandMetadataTrackDispatchType = '';
     });
   }
+
+  cea608Stream.on('data', (caption) => {
+    if (caption) {
+      if (!inbandTextTrack) {
+        removeExistingTrack(tech, 'captions', 'cc1');
+        inbandTextTrack = tech.addRemoteTextTrack({
+          kind: 'captions',
+          label: 'cc1'
+        }, false).track;
+      }
+
+      inbandTextTrack.addCue(
+        new Cue(caption.startPts / 90000, caption.endPts / 90000, caption.text));
+    }
+  });
+
+  tech.on('captiondata', (event, data) => {
+    let captions = data[0].map((d) => {
+      return {
+        pts: d.pos * 90000,
+        bytes: new Uint8Array(window.atob(d.data).split('').map((c) => {
+          return c.charCodeAt(0);
+        }))
+      };
+    });
+
+    captions.forEach((caption) => {
+      captionPackets = captionPackets.concat(
+        parseCaptionPackets(caption.pts, caption.bytes));
+    });
+
+    if (captionPackets.length) {
+      // In Chrome, the Array#sort function is not stable so add a
+      // presortIndex that we can use to ensure we get a stable-sort
+      captionPackets.forEach((elem, idx) => {
+        elem.presortIndex = idx;
+      });
+
+      // sort caption byte-pairs based on their PTS values
+      captionPackets.sort((a, b) => {
+        if (a.pts === b.pts) {
+          return a.presortIndex - b.presortIndex;
+        }
+        return a.pts - b.pts;
+      });
+
+      // Push each caption into Cea608Stream
+      captionPackets.forEach(cea608Stream.push, cea608Stream);
+      captionPackets.length = 0;
+      cea608Stream.flush();
+    }
+  });
 };
 
 /**
