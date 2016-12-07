@@ -137,11 +137,13 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
 FlashlsSourceHandler.handleSource = function(source, tech, options) {
   tech.setSrc(source.src);
 
+  this.tech = tech;
+
   let cea608Stream = new Cea608Stream();
   let captionPackets = [];
   let inbandTextTrack;
 
-  tech.on('seeked', () => {
+  this.onSeeked = () => {
     removeCuesFromTrack(0, Infinity, this.metadataTrack_);
 
     let buffered = tech.buffered();
@@ -152,9 +154,9 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
     } else {
       removeCuesFromTrack(0, Infinity, inbandTextTrack);
     }
-  });
+  };
 
-  tech.on('id3updated', (event, data) => {
+  this.onId3updated = (event, data) => {
     const id3tag = window.atob(data[0]);
     let frameStart = 10;
 
@@ -198,7 +200,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
         cuesArray[cuesArray.length - 1].endTime = duration;
       }
     }
-  });
+  };
 
   if (tech.options_ && tech.options_.playerId) {
     const _player = videojs(tech.options_.playerId);
@@ -207,7 +209,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
       this.metadataTrack_ = _player.addRemoteTextTrack({
         kind: 'metadata',
         label: 'Timed Metadata'
-      }, false).track;
+      }, true).track;
 
       this.metadataTrack_.inBandMetadataTrackDispatchType = '';
     });
@@ -220,7 +222,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
         inbandTextTrack = tech.addRemoteTextTrack({
           kind: 'captions',
           label: 'cc1'
-        }, false).track;
+        }, true).track;
       }
 
       inbandTextTrack.addCue(
@@ -230,7 +232,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
     }
   });
 
-  tech.on('captiondata', (event, data) => {
+  this.onCaptiondata = (event, data) => {
     let captions = data[0].map((d) => {
       return {
         pts: d.pos * 90000,
@@ -265,13 +267,18 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
       captionPackets.length = 0;
       cea608Stream.flush();
     }
-  });
+  };
+
+  tech.on('seeked', this.onSeeked);
+  tech.on('id3updated', this.onId3updated);
+  tech.on('captiondata', this.onCaptiondata);
 };
 
-/**
- * No extra cleanup is necessary on dispose.
- */
-FlashlsSourceHandler.dispose = function() {};
+FlashlsSourceHandler.dispose = function() {
+  this.tech.off('seeked', this.onSeeked);
+  this.tech.off('id3updated', this.onId3updated);
+  this.tech.off('captiondata', this.onCaptiondata);
+};
 
 // Register the source handler and make sure it takes precedence over
 // any other Flash source handlers for HLS
