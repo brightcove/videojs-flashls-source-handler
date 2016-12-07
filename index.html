@@ -12,6 +12,8 @@
          class="video-js vjs-default-skin"
          controls>
   </video>
+  <ul id="id3-cues"></ul>
+  <ul id="active-cues"></ul>
   <ul>
     <li><a href="/test/">Run unit tests in browser.</a></li>
 
@@ -19,14 +21,53 @@
   <script src="/node_modules/video.js/dist/video.js"></script>
   <script src="/dist/videojs-flashls-source-handler.js"></script>
   <script>
-    // force Flash for demo purposes
-    videojs.options.techOrder = ['flash'];
+    function arrayFrom(arrayish) {
+      var result = [];
+      for (var i = 0; i < arrayish.length; i ++) {
+        result.push(arrayish[i]);
+      }
+      return result;
+    };
 
+    videojs.options.flash.swf = 'video-js.swf';
     var player = window.player = videojs('videojs-flashls-source-handler-player');
 
     player.src({
       src: 'http://s3.amazonaws.com/_bc_dml/example-content/hlse/playlist.m3u8',
       type: 'application/x-mpegURL'
+    });
+
+    // display ID3 cues
+    var id3Cues = document.getElementById('id3-cues');
+    var activeCues = document.getElementById('active-cues');
+
+    player.textTracks().on('addtrack', function() {
+      var id3Track;
+      arrayFrom(player.textTracks()).forEach(function(track) {
+        if (track.kind === 'metadata' && !id3Track) {
+          id3Track = track;
+        }
+      });
+
+      if (!id3Track) {
+        return;
+      }
+
+      id3Track.on('cuechange', function(event) {
+        id3Cues.innerHTML = '';
+        arrayFrom(id3Track.cues).forEach(function(cue) {
+          var li = document.createElement('li');
+          li.appendChild(document.createTextNode(cue.text));
+          id3Cues.appendChild(li);
+        });
+
+        activeCues.innerHTML = '';
+        arrayFrom(id3Track.activeCues).forEach(function(cue) {
+          var li = document.createElement('li');
+          li.innerHTML = cue.startTime + '-' + cue.endTime;
+          activeCues.appendChild(li);
+        });
+      });
     });
   </script>
 </body>
