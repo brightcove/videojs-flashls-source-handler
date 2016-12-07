@@ -58,14 +58,14 @@ const removeExistingTrack = function(tech, kind, label) {
 /**
  * convert a string to a byte array of char codes
  */
-const stringToByteArray = function(str) {
-  const arr = new Uint8Array(str.length);
+const stringToByteArray = function(data) {
+  const bytes = new Uint8Array(data.length);
 
-  for (let i = 0; i < str.length; i++) {
-    arr[i] = str.charCodeAt(i);
+  for (let i = 0; i < data.length; i++) {
+    bytes[i] = data.charCodeAt(i);
   }
 
-  return arr;
+  return bytes;
 };
 
 // see CEA-708-D, section 4.4
@@ -234,7 +234,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
     tag.frames.forEach((frame) => {
       const cue = new window.VTTCue(
         time,
-        time,
+        time + 0.1,
         frame.value || frame.url || frame.data || '');
 
       cue.frame = frame;
