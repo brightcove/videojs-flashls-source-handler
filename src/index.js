@@ -1,14 +1,48 @@
 import videojs from 'video.js';
 import window from 'global/window';
-import {Cea608Stream} from 'mux.js/lib/m2ts/caption-stream';
+import { Cea608Stream } from 'mux.js/lib/m2ts/caption-stream';
+import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
 
-const parseSyncSafeInteger = function(data) {
-  return (data.charCodeAt(0) << 21) |
-          (data.charCodeAt(1) << 14) |
-          (data.charCodeAt(2) << 7) |
-          (data.charCodeAt(3));
+/**
+ * Define properties on a cue for backwards compatability,
+ * but warn the user that the way that they are using it
+ * is depricated and will be removed at a later date.
+ *
+ * @param {Cue} cue the cue to add the properties on
+ * @private
+ */
+const deprecateOldCue = function(cue) {
+  Object.defineProperties(cue.frame, {
+    id: {
+      get() {
+        videojs.log.warn(
+          'cue.frame.id is deprecated. Use cue.value.key instead.'
+        );
+        return cue.value.key;
+      }
+    },
+    value: {
+      get() {
+        videojs.log.warn(
+          'cue.frame.value is deprecated. Use cue.value.data instead.'
+        );
+        return cue.value.data;
+      }
+    },
+    privateData: {
+      get() {
+        videojs.log.warn(
+          'cue.frame.privateData is deprecated. Use cue.value.data instead.'
+        );
+        return cue.value.data;
+      }
+    }
+  });
 };
 
+/**
+ * Remove text track from tech
+ */
 const removeExistingTrack = function(tech, kind, label) {
   const tracks = tech.remoteTextTracks() || [];
 
@@ -21,8 +55,21 @@ const removeExistingTrack = function(tech, kind, label) {
   }
 };
 
+/**
+ * convert a string to a byte array of char codes
+ */
+const stringToByteArray = function(str) {
+  const arr = new Uint8Array(str.length);
+
+  for (let i = 0; i < str.length; i++) {
+    arr[i] = str.charCodeAt(i);
+  }
+
+  return arr;
+};
+
 // see CEA-708-D, section 4.4
-const parseCaptionPackets = (pts, userData) => {
+const parseCaptionPackets = function(pts, userData) {
   let results = [];
   let i;
   let count;
@@ -139,16 +186,17 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
  *        The options to pass to the source
  */
 FlashlsSourceHandler.handleSource = function(source, tech, options) {
-  tech.setSrc(source.src);
-
   this.tech = tech;
 
-  let cea608Stream = new Cea608Stream();
+  const cea608Stream = new Cea608Stream();
+  const metadataStream = new MetadataStream();
+
   let captionPackets = [];
   let inbandTextTrack;
+  let metadataTrack;
 
   this.onSeeked = () => {
-    removeCuesFromTrack(0, Infinity, this.metadataTrack_);
+    removeCuesFromTrack(0, Infinity, metadataTrack);
 
     let buffered = tech.buffered();
 
@@ -162,76 +210,63 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
 
   this.onId3updated = (event, data) => {
     const id3tag = window.atob(data[0]);
-    let frameStart = 10;
+    const bytes = stringToByteArray(id3tag);
+    const chunk = {
+      type: 'timed-metadata',
+      dataAlignmentIndicator: true,
+      data: bytes
+    };
 
-    if (id3tag.charCodeAt(5) & 0x40) {
-      // advance frame start past extended header
-      frameStart += 4;
-      frameStart += parseSyncSafeInteger(id3tag.substring(10, 14));
-    }
-
-    const frameSize = parseSyncSafeInteger(id3tag.substring(frameStart + 4, frameStart + 8));
-
-    if (this.metadataTrack_) {
-      const time = tech.currentTime();
-      const val = id3tag.substring(frameStart + 10, frameStart + frameSize + 10);
-      const cue = new window.VTTCue(
-        time,
-        time,
-        val);
-      const frameKey = id3tag.substring(frameStart, frameStart + 4);
-      const frame = {
-        key: frameKey
-      };
-      const bytes = new Uint8Array(val.length);
-
-      for (let i = 0; i < val.length; i++) {
-        bytes[i] = val.charCodeAt(i);
-      }
-
-      frame.data = bytes;
-
-      cue.value = frame;
-
-      this.metadataTrack_.addCue(cue);
-
-      if (this.metadataTrack_.cues && this.metadataTrack_.cues.length) {
-        const cues = this.metadataTrack_.cues;
-        const cuesArray = [];
-        let duration = tech.duration();
-
-        if (isNaN(duration) || Math.abs(duration) === Infinity) {
-          duration = Number.MAX_VALUE;
-        }
-
-        for (let i = 0; i < cues.length; i++) {
-          cuesArray.push(cues[i]);
-        }
-
-        cuesArray.sort((a, b) => a.startTime - b.startTime);
-
-        for (let i = 0; i < cuesArray.length - 1; i++) {
-          if (cuesArray[i].endTime !== cuesArray[i + 1].startTime) {
-            cuesArray[i].endTime = cuesArray[i + 1].startTime;
-          }
-        }
-        cuesArray[cuesArray.length - 1].endTime = duration;
-      }
-    }
+    metadataStream.push(chunk);
   };
 
-  if (tech.options_ && tech.options_.playerId) {
-    const _player = videojs(tech.options_.playerId);
-
-    _player.ready(() => {
-      this.metadataTrack_ = _player.addRemoteTextTrack({
+  metadataStream.on('data', (tag) => {
+    if (!metadataTrack) {
+      metadataTrack = tech.addRemoteTextTrack({
         kind: 'metadata',
         label: 'Timed Metadata'
       }, true).track;
 
-      this.metadataTrack_.inBandMetadataTrackDispatchType = '';
+      metadataTrack.inBandMetadataTrackDispatchType = '';
+    }
+    const time = tech.currentTime();
+
+    tag.frames.forEach((frame) => {
+      const cue = new window.VTTCue(
+        time,
+        time,
+        frame.value || frame.url || frame.data || '');
+
+      cue.frame = frame;
+      cue.value = frame;
+
+      deprecateOldCue(cue);
+      metadataTrack.addCue(cue);
     });
-  }
+
+    if (metadataTrack.cues && metadataTrack.cues.length) {
+      const cues = metadataTrack.cues;
+      const cuesArray = [];
+      let duration = tech.duration();
+
+      if (isNaN(duration) || Math.abs(duration) === Infinity) {
+        duration = Number.MAX_VALUE;
+      }
+
+      for (let i = 0; i < cues.length; i++) {
+        cuesArray.push(cues[i]);
+      }
+
+      cuesArray.sort((a, b) => a.startTime - b.startTime);
+
+      for (let i = 0; i < cuesArray.length - 1; i++) {
+        if (cuesArray[i].endTime !== cuesArray[i + 1].startTime) {
+          cuesArray[i].endTime = cuesArray[i + 1].startTime;
+        }
+      }
+      cuesArray[cuesArray.length - 1].endTime = duration;
+    }
+  });
 
   cea608Stream.on('data', (caption) => {
     if (caption) {
@@ -254,9 +289,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
     let captions = data[0].map((d) => {
       return {
         pts: d.pos * 90000,
-        bytes: new Uint8Array(window.atob(d.data).split('').map((c) => {
-          return c.charCodeAt(0);
-        }))
+        bytes: stringToByteArray(window.atob(d.data))
       };
     });
 
@@ -288,13 +321,15 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
   };
 
   tech.on('seeked', this.onSeeked);
-  // tech.on('id3updated', this.onId3updated);
+  tech.on('id3updated', this.onId3updated);
   tech.on('captiondata', this.onCaptiondata);
+
+  tech.setSrc(source.src);
 };
 
 FlashlsSourceHandler.dispose = function() {
   this.tech.off('seeked', this.onSeeked);
-  // this.tech.off('id3updated', this.onId3updated);
+  this.tech.off('id3updated', this.onId3updated);
   this.tech.off('captiondata', this.onCaptiondata);
 };
 
