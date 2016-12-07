@@ -23,7 +23,11 @@ const removeExistingTrack = function(tech, kind, label) {
 
 // see CEA-708-D, section 4.4
 const parseCaptionPackets = (pts, userData) => {
-  var results = [], i, count, offset, data;
+  let results = [];
+  let i;
+  let count;
+  let offset;
+  let data;
 
   // if this is just filler, return immediately
   if (!(userData[0] & 0x40)) {
@@ -36,7 +40,7 @@ const parseCaptionPackets = (pts, userData) => {
     offset = i * 3;
     data = {
       type: userData[offset + 2] & 0x03,
-      pts: pts
+      pts
     };
 
     // capture cc data when cc_valid is 1
