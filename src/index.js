@@ -9,8 +9,6 @@ const parseSyncSafeInteger = function(data) {
           (data.charCodeAt(3));
 };
 
-const Cue = window.WebKitDataCue || window.VTTCue;
-
 const removeExistingTrack = function(tech, kind, label) {
   const tracks = tech.remoteTextTracks() || [];
 
@@ -144,19 +142,16 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
   let inbandTextTrack;
 
   tech.on('seeked', () => {
-    if (this.metadataTrack_ &&
-        this.metadataTrack_.cues &&
-        this.metadataTrack_.cues.length) {
-      let i = this.metadataTrack_.cues.length;
+    removeCuesFromTrack(0, Infinity, this.metadataTrack_);
 
-      while (i--) {
-        let cue = this.metadataTrack_.cues[i];
+    let buffered = tech.buffered();
 
-        this.metadataTrack_.removeCue(cue);
-      }
+    if (buffered.length === 1) {
+      removeCuesFromTrack(0, buffered.start(0), inbandTextTrack);
+      removeCuesFromTrack(buffered.end(0), Infinity, inbandTextTrack);
+    } else {
+      removeCuesFromTrack(0, Infinity, inbandTextTrack);
     }
-
-    removeCuesFromTrack(0, Infinity, inbandTextTrack);
   });
 
   tech.on('id3updated', (event, data) => {
@@ -173,9 +168,10 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
 
     if (this.metadataTrack_) {
       const time = tech.currentTime();
-      const cue = new Cue(time,
-                          time,
-                          id3tag.substring(frameStart + 10, frameStart + frameSize + 10));
+      const cue = new window.VTTCue(
+        time,
+        time,
+        id3tag.substring(frameStart + 10, frameStart + frameSize + 10));
 
       this.metadataTrack_.addCue(cue);
 
@@ -228,7 +224,9 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
       }
 
       inbandTextTrack.addCue(
-        new Cue(caption.startPts / 90000, caption.endPts / 90000, caption.text));
+        new window.VTTCue(caption.startPts / 90000,
+                          caption.endPts / 90000,
+                          caption.text));
     }
   });
 
