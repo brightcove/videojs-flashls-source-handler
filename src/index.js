@@ -174,10 +174,24 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
 
     if (this.metadataTrack_) {
       const time = tech.currentTime();
+      const val = id3tag.substring(frameStart + 10, frameStart + frameSize + 10);
       const cue = new window.VTTCue(
         time,
         time,
-        id3tag.substring(frameStart + 10, frameStart + frameSize + 10));
+        val);
+      const frameKey = id3tag.substring(frameStart, frameStart + 4);
+      const frame = {
+        key: frameKey
+      };
+      const bytes = new Uint8Array(val.length);
+
+      for (let i = 0; i < val.length; i++) {
+        bytes[i] = val.charCodeAt(i);
+      }
+
+      frame.data = bytes;
+
+      cue.value = frame;
 
       this.metadataTrack_.addCue(cue);
 
@@ -274,13 +288,13 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
   };
 
   tech.on('seeked', this.onSeeked);
-  tech.on('id3updated', this.onId3updated);
+  // tech.on('id3updated', this.onId3updated);
   tech.on('captiondata', this.onCaptiondata);
 };
 
 FlashlsSourceHandler.dispose = function() {
   this.tech.off('seeked', this.onSeeked);
-  this.tech.off('id3updated', this.onId3updated);
+  // this.tech.off('id3updated', this.onId3updated);
   this.tech.off('captiondata', this.onCaptiondata);
 };
 
