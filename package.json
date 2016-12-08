@@ -73,7 +73,7 @@
   "dependencies": {
     "browserify-versionify": "^1.0.6",
     "video.js": "^5.10.1",
-    "mux.js": "^3.0.3"
+    "mux.js": "^3.0.4"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",
