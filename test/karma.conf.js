@@ -14,7 +14,7 @@ module.exports = function(config) {
 
   // If no browsers are specified, we enable `karma-detect-browsers`
   // this will detect all browsers that are available for testing
-  if (!config.browsers.length) {
+  if (!browsers.length) {
     detectBrowsers.enabled = true;
   }
 
@@ -39,6 +39,12 @@ module.exports = function(config) {
         os: 'Windows',
         os_version: '8.1'
       }
+    },
+
+    browserStack: {
+      project: process.env.npm_package_name,
+      name: process.env.TEAMCITY_PROJECT_NAME + process.env.BUILD_NUMBER,
+      pollingTimeout: 30000
     },
 
     detectBrowsers: detectBrowsers,
