@@ -131,6 +131,20 @@ const removeCuesFromTrack = function(start, end, track) {
   }
 };
 
+/**
+ * Removes cues from the track that come before the start of the buffer
+ *
+ * @param {TimeRanges} buffered state of the buffer
+ * @param {TextTrack} track track to remove cues from
+ * @private
+ * @function removeOldCues
+ */
+const removeOldCues = function(buffered, track) {
+  if (buffered.length) {
+    removeCuesFromTrack(0, buffered.start(0), track);
+  }
+};
+
 /*
  * Registers the SWF as a handler for HLS video.
  *
@@ -230,9 +244,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
       metadataTrack.inBandMetadataTrackDispatchType = '';
     }
 
-    const buffered = tech.buffered();
-
-    removeCuesFromTrack(0, buffered.start(0), metadataTrack);
+    removeOldCues(tech.buffered(), metadataTrack);
 
     const time = tech.currentTime();
 
@@ -283,9 +295,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
         }, true).track;
       }
 
-      const buffered = tech.buffered();
-
-      removeCuesFromTrack(0, buffered.start(0), inbandTextTrack);
+      removeOldCues(tech.buffered(), inbandTextTrack);
 
       inbandTextTrack.addCue(
         new window.VTTCue(caption.startPts / 90000,
