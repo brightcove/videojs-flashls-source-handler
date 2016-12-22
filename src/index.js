@@ -229,6 +229,11 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
 
       metadataTrack.inBandMetadataTrackDispatchType = '';
     }
+
+    const buffered = tech.buffered();
+
+    removeCuesFromTrack(0, buffered.start(0), metadataTrack);
+
     const time = tech.currentTime();
 
     tag.frames.forEach((frame) => {
@@ -277,6 +282,10 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
           label: 'cc1'
         }, true).track;
       }
+
+      const buffered = tech.buffered();
+
+      removeCuesFromTrack(0, buffered.start(0), inbandTextTrack);
 
       inbandTextTrack.addCue(
         new window.VTTCue(caption.startPts / 90000,
