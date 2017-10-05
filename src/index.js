@@ -194,8 +194,8 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
  *         Returns the time ranges that can be seeked to.
  */
 FlashlsSourceHandler.seekable = function() {
-  let seekableStart = this.tech.el_.vjs_getProperty('seekStart');
-  let seekableEnd = this.tech.el_.vjs_getProperty('seekEnd');
+  let seekableStart = this.tech.el_.vjs_getProperty('seekableStart');
+  let seekableEnd = this.tech.el_.vjs_getProperty('seekableEnd');
 
   if (seekableEnd === 0){
     return videojs.createTimeRange();
