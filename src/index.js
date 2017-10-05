@@ -188,6 +188,22 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
 };
 
 /**
+ * Calculates the interval of time that is currently seekable. 
+ * 
+ *@return {TimeRange}
+ *         Returns the time ranges that can be seeked to.
+ */
+FlashlsSourceHandler.seekable = function() {
+  let seekableStart = this.tech.el_.vjs_getProperty('seekStart');
+  let seekableEnd = this.tech.el_.vjs_getProperty('seekEnd');
+
+  if (seekableEnd === 0){
+    return videojs.createTimeRange();
+  }
+  return videojs.createTimeRange(seekableStart, seekableEnd)
+};
+
+/**
  * Pass the source to the swf.
  *
  * @param {Tech~SourceObject} source
@@ -344,6 +360,7 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
   tech.on('captiondata', this.onCaptiondata);
 
   tech.setSrc(source.src);
+  return this;
 };
 
 FlashlsSourceHandler.dispose = function() {
