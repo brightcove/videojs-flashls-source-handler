@@ -2,6 +2,7 @@ import videojs from 'video.js';
 import window from 'global/window';
 import { Cea608Stream } from 'mux.js/lib/m2ts/caption-stream';
 import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
+import { createRepresentations } from './representations.js';
 
 /**
  * Define properties on a cue for backwards compatability,
@@ -145,6 +146,291 @@ const removeOldCues = function(buffered, track) {
   }
 };
 
+/**
+ * Updates the selected index of the quality levels list and triggers a change event
+ *
+ * @param {QualityLevelList} qualityLevels
+ *        The quality levels list
+ * @param {String} id
+ *        The id of the new active quality level
+ * @function updateSelectedIndex
+ */
+const updateSelectedIndex = (qualityLevels, id) => {
+  let selectedIndex = -1;
+
+  for (let i = 0; i < qualityLevels.length; i++) {
+    if (qualityLevels[i].id === id) {
+      selectedIndex = i;
+      break;
+    }
+  }
+
+  qualityLevels.selectedIndex_ = selectedIndex;
+  qualityLevels.trigger({
+    selectedIndex,
+    type: 'change'
+  });
+};
+
+class FlashlsHandler {
+  constructor(source, tech, options) {
+    // tech.player() is deprecated but setup a reference to HLS for
+    // backwards-compatibility
+    if (tech.options_ && tech.options_.playerId) {
+      let _player = videojs(tech.options_.playerId);
+
+      if (!_player.hasOwnProperty('hls')) {
+        Object.defineProperty(_player, 'hls', {
+          get: () => {
+            videojs.log.warn('player.hls is deprecated. Use player.tech_.hls instead.');
+            tech.trigger({type: 'usage', name: 'flashls-player-access'});
+            return this;
+          }
+        });
+      }
+    }
+
+    this.tech_ = tech;
+    this.metadataTrack_ = null;
+    this.inbandTextTrack_ = null;
+    this.metadataStream_ = new MetadataStream();
+    this.cea608Stream_ = new Cea608Stream();
+    this.captionPackets_ = [];
+
+    // bind event listeners to this context
+    this.onLoadedmetadata_ = this.onLoadedmetadata_.bind(this);
+    this.onSeeked_ = this.onSeeked_.bind(this);
+    this.onId3updated_ = this.onId3updated_.bind(this);
+    this.onCaptionData_ = this.onCaptionData_.bind(this);
+    this.onMetadataStreamData_ = this.onMetadataStreamData_.bind(this);
+    this.onCea608StreamData_ = this.onCea608StreamData_.bind(this);
+    this.onLevelSwitch_ = this.onLevelSwitch_.bind(this);
+
+    this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
+    this.tech_.on('seeked', this.onSeeked_);
+    this.tech_.on('id3updated', this.onId3updated_);
+    this.tech_.on('captiondata', this.onCaptionData_);
+
+    this.metadataStream_.on('data', this.onMetadataStreamData_);
+    this.cea608Stream_.on('data', this.onCea608StreamData_);
+  }
+
+  src(source) {
+    // do nothing if source is falsey
+    if (!source) {
+      return;
+    }
+    this.tech_.setSrc(source.src);
+  }
+
+  /**
+   * Calculates the interval of time that is currently seekable.
+   *
+   * @return {TimeRange}
+   *         Returns the time ranges that can be seeked to.
+   */
+  seekable() {
+    let seekableStart = this.tech_.el_.vjs_getProperty('seekableStart');
+    let seekableEnd = this.tech_.el_.vjs_getProperty('seekableEnd');
+
+    if (seekableEnd === 0) {
+      return videojs.createTimeRange();
+    }
+
+    return videojs.createTimeRange(seekableStart, seekableEnd);
+  }
+
+  /**
+   * Event listener for the loadedmetadata event. This sets up the representations api
+   * and populates the quality levels list if it is available on the player
+   */
+  onLoadedmetadata_() {
+    this.representations = createRepresentations(this.tech_);
+
+    const player = videojs.players[this.tech_.options_.playerId];
+
+    if (player && player.qualityLevels) {
+      this.qualityLevels_ = player.qualityLevels();
+      this.representations().forEach((representation) => {
+        this.qualityLevels_.addQualityLevel(representation);
+      });
+
+      this.tech_.on('levelswitch', this.onLevelSwitch_);
+
+      // update initial selected index
+      updateSelectedIndex(this.qualityLevels_,
+                          this.tech_.el_.vjs_getProperty('level') + '');
+    }
+  }
+
+  /**
+   * Event listener for the levelswitch event. This will update the selected index of the
+   * quality levels list with the new active level.
+   *
+   * @param {Object} event
+   *        event object for the levelswitch event
+   * @param {Array} level
+   *        The active level will be the first element of the array
+   */
+  onLevelSwitch_(event, level) {
+    updateSelectedIndex(this.qualityLevels_, level[0].levelIndex + '');
+  }
+
+  /**
+   * Event listener for the seeked event. This will remove cues from the metadata track
+   * and inband text track after seeks
+   */
+  onSeeked_() {
+    removeCuesFromTrack(0, Infinity, this.metadataTrack_);
+
+    let buffered = this.tech_.buffered();
+
+    if (buffered.length === 1) {
+      removeCuesFromTrack(0, buffered.start(0), this.inbandTextTrack_);
+      removeCuesFromTrack(buffered.end(0), Infinity, this.inbandTextTrack_);
+    } else {
+      removeCuesFromTrack(0, Infinity, this.inbandTextTrack_);
+    }
+  }
+
+  /**
+   * Event listener for the id3updated event. This will store id3 tags recevied by flashls
+   *
+   * @param {Object} event
+   *        event object for the levelswitch event
+   * @param {Array} data
+   *        The id3 tag base64 encoded will be the first element of the array
+   */
+  onId3updated_(event, data) {
+    const id3tag = window.atob(data[0]);
+    const bytes = stringToByteArray(id3tag);
+    const chunk = {
+      type: 'timed-metadata',
+      dataAlignmentIndicator: true,
+      data: bytes
+    };
+
+    this.metadataStream_.push(chunk);
+  }
+
+  onMetadataStreamData_(tag) {
+    if (!this.metadataTrack_) {
+      this.metadataTrack_ = this.tech_.addRemoteTextTrack({
+        kind: 'metadata',
+        label: 'Timed Metadata'
+      }, false).track;
+
+      this.metadataTrack_.inBandMetadataTrackDispatchType = '';
+    }
+
+    removeOldCues(this.tech_.buffered(), this.metadataTrack_);
+
+    const time = this.tech_.currentTime();
+
+    tag.frames.forEach((frame) => {
+      const cue = new window.VTTCue(
+        time,
+        time + 0.1,
+        frame.value || frame.url || frame.data || '');
+
+      cue.frame = frame;
+      cue.value = frame;
+
+      deprecateOldCue(cue);
+      this.metadataTrack_.addCue(cue);
+    });
+
+    if (this.metadataTrack_.cues && this.metadataTrack_.cues.length) {
+      const cues = this.metadataTrack_.cues;
+      const cuesArray = [];
+      let duration = this.tech_.duration();
+
+      if (isNaN(duration) || Math.abs(duration) === Infinity) {
+        duration = Number.MAX_VALUE;
+      }
+
+      for (let i = 0; i < cues.length; i++) {
+        cuesArray.push(cues[i]);
+      }
+
+      cuesArray.sort((a, b) => a.startTime - b.startTime);
+
+      for (let i = 0; i < cuesArray.length - 1; i++) {
+        if (cuesArray[i].endTime !== cuesArray[i + 1].startTime) {
+          cuesArray[i].endTime = cuesArray[i + 1].startTime;
+        }
+      }
+      cuesArray[cuesArray.length - 1].endTime = duration;
+    }
+  }
+
+  onCaptionData_(event, data) {
+    let captions = data[0].map((d) => {
+      return {
+        pts: d.pos * 90000,
+        bytes: stringToByteArray(window.atob(d.data))
+      };
+    });
+
+    captions.forEach((caption) => {
+      this.captionPackets_ = this.captionPackets_.concat(
+        parseCaptionPackets(caption.pts, caption.bytes));
+    });
+
+    if (this.captionPackets_.length) {
+      // In Chrome, the Array#sort function is not stable so add a
+      // presortIndex that we can use to ensure we get a stable-sort
+      this.captionPackets_.forEach((elem, idx) => {
+        elem.presortIndex = idx;
+      });
+
+      // sort caption byte-pairs based on their PTS values
+      this.captionPackets_.sort((a, b) => {
+        if (a.pts === b.pts) {
+          return a.presortIndex - b.presortIndex;
+        }
+        return a.pts - b.pts;
+      });
+
+      // Push each caption into Cea608Stream
+      this.captionPackets_.forEach(this.cea608Stream_.push, this.cea608Stream_);
+      this.captionPackets_.length = 0;
+      this.cea608Stream_.flush();
+    }
+  }
+
+  onCea608StreamData_(caption) {
+    if (caption) {
+      if (!this.inbandTextTrack_) {
+        removeExistingTrack(this.tech_, 'captions', 'cc1');
+        this.inbandTextTrack_ = this.tech_.addRemoteTextTrack({
+          kind: 'captions',
+          label: 'cc1'
+        }, false).track;
+      }
+
+      removeOldCues(this.tech_.buffered(), this.inbandTextTrack_);
+
+      this.inbandTextTrack_.addCue(
+        new window.VTTCue(caption.startPts / 90000,
+                          caption.endPts / 90000,
+                          caption.text));
+    }
+  }
+
+  dispose() {
+    this.tech_.off('loadedmetadata', this.onLoadedmetadata_);
+    this.tech_.off('seeked', this.onSeeked_);
+    this.tech_.off('id3updated', this.onId3updated_);
+    this.tech_.off('captiondata', this.onCaptionData_);
+
+    if (this.qualityLevels_) {
+      this.qualityLevels_.dispose();
+      this.tech_.off('levelswitch', this.onLevelSwitch_);
+    }
+  }
+}
+
 /*
  * Registers the SWF as a handler for HLS video.
  *
@@ -188,22 +474,6 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
 };
 
 /**
- * Calculates the interval of time that is currently seekable. 
- * 
- *@return {TimeRange}
- *         Returns the time ranges that can be seeked to.
- */
-FlashlsSourceHandler.seekable = function() {
-  let seekableStart = this.tech.el_.vjs_getProperty('seekableStart');
-  let seekableEnd = this.tech.el_.vjs_getProperty('seekableEnd');
-
-  if (seekableEnd === 0){
-    return videojs.createTimeRange();
-  }
-  return videojs.createTimeRange(seekableStart, seekableEnd)
-};
-
-/**
  * Pass the source to the swf.
  *
  * @param {Tech~SourceObject} source
@@ -216,157 +486,10 @@ FlashlsSourceHandler.seekable = function() {
  *        The options to pass to the source
  */
 FlashlsSourceHandler.handleSource = function(source, tech, options) {
-  this.tech = tech;
+  tech.hls = new FlashlsHandler(source, tech, options);
 
-  const cea608Stream = new Cea608Stream();
-  const metadataStream = new MetadataStream();
-
-  let captionPackets = [];
-  let inbandTextTrack;
-  let metadataTrack;
-
-  this.onSeeked = () => {
-    removeCuesFromTrack(0, Infinity, metadataTrack);
-
-    let buffered = tech.buffered();
-
-    if (buffered.length === 1) {
-      removeCuesFromTrack(0, buffered.start(0), inbandTextTrack);
-      removeCuesFromTrack(buffered.end(0), Infinity, inbandTextTrack);
-    } else {
-      removeCuesFromTrack(0, Infinity, inbandTextTrack);
-    }
-  };
-
-  this.onId3updated = (event, data) => {
-    const id3tag = window.atob(data[0]);
-    const bytes = stringToByteArray(id3tag);
-    const chunk = {
-      type: 'timed-metadata',
-      dataAlignmentIndicator: true,
-      data: bytes
-    };
-
-    metadataStream.push(chunk);
-  };
-
-  metadataStream.on('data', (tag) => {
-    if (!metadataTrack) {
-      metadataTrack = tech.addRemoteTextTrack({
-        kind: 'metadata',
-        label: 'Timed Metadata'
-      }, true).track;
-
-      metadataTrack.inBandMetadataTrackDispatchType = '';
-    }
-
-    removeOldCues(tech.buffered(), metadataTrack);
-
-    const time = tech.currentTime();
-
-    tag.frames.forEach((frame) => {
-      const cue = new window.VTTCue(
-        time,
-        time + 0.1,
-        frame.value || frame.url || frame.data || '');
-
-      cue.frame = frame;
-      cue.value = frame;
-
-      deprecateOldCue(cue);
-      metadataTrack.addCue(cue);
-    });
-
-    if (metadataTrack.cues && metadataTrack.cues.length) {
-      const cues = metadataTrack.cues;
-      const cuesArray = [];
-      let duration = tech.duration();
-
-      if (isNaN(duration) || Math.abs(duration) === Infinity) {
-        duration = Number.MAX_VALUE;
-      }
-
-      for (let i = 0; i < cues.length; i++) {
-        cuesArray.push(cues[i]);
-      }
-
-      cuesArray.sort((a, b) => a.startTime - b.startTime);
-
-      for (let i = 0; i < cuesArray.length - 1; i++) {
-        if (cuesArray[i].endTime !== cuesArray[i + 1].startTime) {
-          cuesArray[i].endTime = cuesArray[i + 1].startTime;
-        }
-      }
-      cuesArray[cuesArray.length - 1].endTime = duration;
-    }
-  });
-
-  cea608Stream.on('data', (caption) => {
-    if (caption) {
-      if (!inbandTextTrack) {
-        removeExistingTrack(tech, 'captions', 'cc1');
-        inbandTextTrack = tech.addRemoteTextTrack({
-          kind: 'captions',
-          label: 'cc1'
-        }, true).track;
-      }
-
-      removeOldCues(tech.buffered(), inbandTextTrack);
-
-      inbandTextTrack.addCue(
-        new window.VTTCue(caption.startPts / 90000,
-                          caption.endPts / 90000,
-                          caption.text));
-    }
-  });
-
-  this.onCaptiondata = (event, data) => {
-    let captions = data[0].map((d) => {
-      return {
-        pts: d.pos * 90000,
-        bytes: stringToByteArray(window.atob(d.data))
-      };
-    });
-
-    captions.forEach((caption) => {
-      captionPackets = captionPackets.concat(
-        parseCaptionPackets(caption.pts, caption.bytes));
-    });
-
-    if (captionPackets.length) {
-      // In Chrome, the Array#sort function is not stable so add a
-      // presortIndex that we can use to ensure we get a stable-sort
-      captionPackets.forEach((elem, idx) => {
-        elem.presortIndex = idx;
-      });
-
-      // sort caption byte-pairs based on their PTS values
-      captionPackets.sort((a, b) => {
-        if (a.pts === b.pts) {
-          return a.presortIndex - b.presortIndex;
-        }
-        return a.pts - b.pts;
-      });
-
-      // Push each caption into Cea608Stream
-      captionPackets.forEach(cea608Stream.push, cea608Stream);
-      captionPackets.length = 0;
-      cea608Stream.flush();
-    }
-  };
-
-  tech.on('seeked', this.onSeeked);
-  tech.on('id3updated', this.onId3updated);
-  tech.on('captiondata', this.onCaptiondata);
-
-  tech.setSrc(source.src);
-  return this;
-};
-
-FlashlsSourceHandler.dispose = function() {
-  this.tech.off('seeked', this.onSeeked);
-  this.tech.off('id3updated', this.onId3updated);
-  this.tech.off('captiondata', this.onCaptiondata);
+  tech.hls.src(source);
+  return tech.hls;
 };
 
 // Register the source handler and make sure it takes precedence over
