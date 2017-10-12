@@ -313,6 +313,13 @@ class FlashlsHandler {
     this.metadataStream_.push(chunk);
   }
 
+  /**
+   * Event listener for the data event from the metadata stream. This will create cues
+   * for each frame in the metadata tag and add them to the metadata track
+   *
+   * @param {Object} tag
+   *        The metadata tag
+   */
   onMetadataStreamData_(tag) {
     if (!this.metadataTrack_) {
       this.metadataTrack_ = this.tech_.addRemoteTextTrack({
@@ -364,6 +371,15 @@ class FlashlsHandler {
     }
   }
 
+  /**
+   * Event listener for the captiondata event from FlasHLS. This will parse out the
+   * caption data and feed it to the CEA608 caption stream.
+   *
+   * @param {Object} event
+   *        The captiondata event object
+   * @param {Array} data
+   *        The caption packets array will be the first element of data.
+   */
   onCaptionData_(event, data) {
     let captions = data[0].map((d) => {
       return {
@@ -399,6 +415,13 @@ class FlashlsHandler {
     }
   }
 
+  /**
+   * Event listener for the data event from the CEA608 caption stream. This will create
+   * cues for the captions received from the stream and add them to the inband text track
+   *
+   * @param {Object} caption
+   *        The caption object
+   */
   onCea608StreamData_(caption) {
     if (caption) {
       if (!this.inbandTextTrack_) {
