@@ -205,6 +205,7 @@ class FlashlsHandler {
     this.onMetadataStreamData_ = this.onMetadataStreamData_.bind(this);
     this.onCea608StreamData_ = this.onCea608StreamData_.bind(this);
     this.onLevelSwitch_ = this.onLevelSwitch_.bind(this);
+    this.onAudioTrackChanged = this.onAudioTrackChanged.bind(this);
 
     this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
     this.tech_.on('seeked', this.onSeeked_);
@@ -261,6 +262,34 @@ class FlashlsHandler {
       updateSelectedIndex(this.qualityLevels_,
                           this.tech_.el_.vjs_getProperty('level') + '');
     }
+
+    let audioTracks = this.tech_.el_.vjs_getProperty('audioTracks');
+
+    const enabledID = this.tech_.el_.vjs_getProperty('audioTrack');
+
+    audioTracks.forEach((track) => {
+      track.label = track.title;
+      if (track.id === enabledID) {
+        track.enabled = true;
+      } else {
+        track.enabled = false;
+      }
+      this.tech_.audioTracks_.addTrack(new videojs.AudioTrack(track));
+    });
+
+    this.tech_.audioTracks().addEventListener('change', this.onAudioTrackChanged);
+  }
+
+  /**
+   * Event listener for the change event. This will update the selected index of the
+   * audio track list with the new active track.
+   */
+  onAudioTrackChanged() {
+    this.tech_.audioTracks_.tracks_.forEach((track) => {
+      if (track.enabled) {
+        this.tech_.el_.vjs_setProperty('audioTrack', track.id);
+      }
+    });
   }
 
   /**
@@ -446,6 +475,7 @@ class FlashlsHandler {
     this.tech_.off('seeked', this.onSeeked_);
     this.tech_.off('id3updated', this.onId3updated_);
     this.tech_.off('captiondata', this.onCaptionData_);
+    this.tech_.off('change', this.onAudioTrackChanged);
 
     if (this.qualityLevels_) {
       this.qualityLevels_.dispose();
