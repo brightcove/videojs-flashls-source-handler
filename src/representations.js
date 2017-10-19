@@ -61,6 +61,7 @@ export const createRepresentations = (tech) => {
     // if only one representation is enabled, enter manual level mode
     if (enabledRepresentations.length === 1) {
       tech.el_.vjs_setProperty('level', parseInt(enabledRepresentations[0].id, 10));
+      tech.el_.vjs_setProperty('autoLevelCapping', -1);
       return;
     }
 
@@ -75,6 +76,7 @@ export const createRepresentations = (tech) => {
   return () => {
     // populate representations on the first call
     if (!representations) {
+      // FlasHLS returns levels pre-sorted by bitrate
       const levels = tech.el_.vjs_getProperty('levels');
 
       // filter out levels that are audio only before mapping to representation objects
