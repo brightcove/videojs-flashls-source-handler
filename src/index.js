@@ -285,7 +285,7 @@ class FlashlsHandler {
    * audio track list with the new active track.
    */
   onAudioTrackChanged() {
-    this.tech_.audioTracks_.tracks_.forEach((track) => {
+    this.tech_.audioTracks().tracks_.forEach((track) => {
       if (track.enabled) {
         this.tech_.el_.vjs_setProperty('audioTrack', track.id);
       }
