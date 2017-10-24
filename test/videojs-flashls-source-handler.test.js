@@ -6,7 +6,7 @@ import videojs from 'video.js';
 
 import handler from '../src/index';
 import { updateAudioTrack, setupAudioTracks } from '../src/flashlsAudioTracks.js';
-import { makeMochTech } from '../util/util.js';
+import { makeMochTech } from '../test/util/util.js';
 
 QUnit.test('the environment is sane', function(assert) {
   assert.strictEqual(typeof Array.isArray, 'function', 'es5 exists');
