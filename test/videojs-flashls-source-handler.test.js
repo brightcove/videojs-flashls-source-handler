@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import videojs from 'video.js';
 
 import handler from '../src/index';
-import { updateAudioTrack, onTrackChanged } from '../src/flashlsAudioTracks.js';
+import { updateAudioTrack, setupAudioTracks } from '../src/flashlsAudioTracks.js';
 
 const noop = () => {};
 
@@ -101,13 +101,11 @@ QUnit.test('Flashls Audiotracks tests',
       vjsAudioTracks.push(t);
     };
 
-    tech.audioTracks().tracks_ = vjsAudioTracks;
-
     assert.equal(vjsAudioTracks.length, 0, 'Initial size');
 
-    onTrackChanged(tech);
+    setupAudioTracks(tech);
 
-    assert.equal(vjsAudioTracks.length, 3, 'Length after onTrackChanged()');
+    assert.equal(vjsAudioTracks.length, 3, 'Length after setupAudioTracks()');
     assert.equal(swfAudioTrack, 0, 'Initial Audio track which is enabled');
 
     vjsAudioTracks[1].enabled = true;

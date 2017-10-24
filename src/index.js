@@ -3,7 +3,7 @@ import window from 'global/window';
 import { Cea608Stream } from 'mux.js/lib/m2ts/caption-stream';
 import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
 import { createRepresentations } from './representations.js';
-import { updateAudioTrack, onTrackChanged } from './flashlsAudioTracks.js';
+import { updateAudioTrack, setupAudioTracks } from './flashlsAudioTracks.js';
 
 /**
  * Define properties on a cue for backwards compatability,
@@ -264,8 +264,8 @@ class FlashlsHandler {
                           this.tech_.el_.vjs_getProperty('level') + '');
     }
 
-    onTrackChanged(this.tech_);
-    this.tech_.audioTracks().addEventListener('change', this.onAudioTrackChanged);
+    setupAudioTracks(this.tech_);
+    this.tech_.audioTracks().on('change', this.onAudioTrackChanged);
   }
 
   /**
@@ -459,7 +459,7 @@ class FlashlsHandler {
     this.tech_.off('seeked', this.onSeeked_);
     this.tech_.off('id3updated', this.onId3updated_);
     this.tech_.off('captiondata', this.onCaptionData_);
-    this.tech_.off('change', this.onAudioTrackChanged);
+    this.tech_.audioTracks().off('change', this.onAudioTrackChanged);
 
     if (this.qualityLevels_) {
       this.qualityLevels_.dispose();

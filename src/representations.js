@@ -82,12 +82,6 @@ export const createRepresentations = (tech) => {
       // filter out levels that are audio only before mapping to representation objects
       representations = levels.filter(level => !level.audio)
                               .map(createRepresentation.bind(null, updateEnabled));
-
-      const levels = tech.el_.vjs_getProperty('levels');
-
-      // filter out levels that are audio only before mapping to representation objects
-      representations = levels.filter(level => !level.audio)
-                              .map(createRepresentation.bind(null, updateEnabled));
     }
 
     return representations;
