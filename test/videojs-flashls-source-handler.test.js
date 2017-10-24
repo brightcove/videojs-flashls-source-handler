@@ -6,28 +6,7 @@ import videojs from 'video.js';
 
 import handler from '../src/index';
 import { updateAudioTrack, setupAudioTracks } from '../src/flashlsAudioTracks.js';
-
-const noop = () => {};
-
-/* eslint-disable camelcase */
-const makeMochTech = (getters, setters) => {
-  return {
-    el_: {
-      vjs_getProperty(prop) {
-        const getProp = getters[prop] || noop;
-
-        return getProp();
-      },
-      vjs_setProperty(prop, value) {
-        const setProp = setters[prop] || noop;
-
-        return setProp(value);
-      }
-    }
-  };
-};
-
-/* eslint-enable camelcase */
+import { makeMochTech } from '../util/util.js';
 
 QUnit.test('the environment is sane', function(assert) {
   assert.strictEqual(typeof Array.isArray, 'function', 'es5 exists');

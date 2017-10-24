@@ -9,11 +9,12 @@ import videojs from 'video.js';
  */
 export const updateAudioTrack = (tech) => {
   const audioTracks = tech.audioTracks();
-  for(let i = 0; i < audioTracks.length; i++) {
+
+  for (let i = 0; i < audioTracks.length; i++) {
     if (audioTracks[i].enabled) {
       tech.el_.vjs_setProperty('audioTrack', audioTracks[i].id);
     }
-  };
+  }
 };
 
 /**
