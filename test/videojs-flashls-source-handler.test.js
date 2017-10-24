@@ -5,6 +5,29 @@ import sinon from 'sinon';
 import videojs from 'video.js';
 
 import handler from '../src/index';
+import { updateAudioTrack, onTrackChanged } from '../src/flashlsAudioTracks.js';
+
+const noop = () => {};
+
+/* eslint-disable camelcase */
+const makeMochTech = (getters, setters) => {
+  return {
+    el_: {
+      vjs_getProperty(prop) {
+        const getProp = getters[prop] || noop;
+
+        return getProp();
+      },
+      vjs_setProperty(prop, value) {
+        const setProp = setters[prop] || noop;
+
+        return setProp(value);
+      }
+    }
+  };
+};
+
+/* eslint-enable camelcase */
 
 QUnit.test('the environment is sane', function(assert) {
   assert.strictEqual(typeof Array.isArray, 'function', 'es5 exists');
@@ -22,7 +45,6 @@ QUnit.module('videojs-flashls-source-handler', {
     // before any player is created; otherwise, timers could get created
     // with the actual timer methods!
     this.clock = sinon.useFakeTimers();
-
     this.fixture = document.getElementById('qunit-fixture');
     this.video = document.createElement('video');
     this.fixture.appendChild(this.video);
@@ -35,3 +57,64 @@ QUnit.module('videojs-flashls-source-handler', {
   }
 });
 
+QUnit.test('Flashls Audiotracks tests',
+  function(assert) {
+    const swfAudioTracks = [
+      {
+        id: 0,
+        enabled: true,
+        kind: '',
+        label: 'English',
+        language: ''
+      },
+      {
+        id: 1,
+        enabled: false,
+        kind: '',
+        label: 'Spanish',
+        language: ''
+      },
+      {
+        id: 2,
+        enabled: false,
+        kind: '',
+        label: 'French',
+        language: ''
+      }
+    ];
+
+    let vjsAudioTracks = [];
+    let swfAudioTrack = 0;
+
+    const tech = makeMochTech({
+      audioTracks: () => swfAudioTracks,
+      audioTrack: () => swfAudioTrack
+    }, {
+      audioTrack: (val) => swfAudioTrack = val
+    });
+
+    tech.audioTracks = () => {
+      return vjsAudioTracks;
+    };
+
+    tech.audioTracks().addTrack = (t) => {
+      vjsAudioTracks.push(t);
+    };
+
+    tech.audioTracks().tracks_ = vjsAudioTracks;
+
+    assert.equal(vjsAudioTracks.length, 0, 'Initial size');
+
+    onTrackChanged(tech);
+
+    assert.equal(vjsAudioTracks.length, 3, 'Length after onTrackChanged()');
+    assert.equal(swfAudioTrack, 0, 'Initial Audio track which is enabled');
+
+    vjsAudioTracks[1].enabled = true;
+    vjsAudioTracks[0].enabled = false;
+
+    updateAudioTrack(tech);
+
+    assert.equal(swfAudioTrack, 1, 'Enabled Audio track after switching');
+
+  });

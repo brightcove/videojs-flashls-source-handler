@@ -3,6 +3,7 @@ import window from 'global/window';
 import { Cea608Stream } from 'mux.js/lib/m2ts/caption-stream';
 import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
 import { createRepresentations } from './representations.js';
+import { updateAudioTrack, onTrackChanged } from './flashlsAudioTracks.js';
 
 /**
  * Define properties on a cue for backwards compatability,
@@ -263,20 +264,7 @@ class FlashlsHandler {
                           this.tech_.el_.vjs_getProperty('level') + '');
     }
 
-    let audioTracks = this.tech_.el_.vjs_getProperty('audioTracks');
-
-    const enabledID = this.tech_.el_.vjs_getProperty('audioTrack');
-
-    audioTracks.forEach((track) => {
-      track.label = track.title;
-      if (track.id === enabledID) {
-        track.enabled = true;
-      } else {
-        track.enabled = false;
-      }
-      this.tech_.audioTracks_.addTrack(new videojs.AudioTrack(track));
-    });
-
+    onTrackChanged(this.tech_);
     this.tech_.audioTracks().addEventListener('change', this.onAudioTrackChanged);
   }
 
@@ -285,11 +273,7 @@ class FlashlsHandler {
    * audio track list with the new active track.
    */
   onAudioTrackChanged() {
-    this.tech_.audioTracks().tracks_.forEach((track) => {
-      if (track.enabled) {
-        this.tech_.el_.vjs_setProperty('audioTrack', track.id);
-      }
-    });
+    updateAudioTrack(this.tech_);
   }
 
   /**
