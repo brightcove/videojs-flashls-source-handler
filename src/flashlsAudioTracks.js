@@ -13,6 +13,7 @@ export const updateAudioTrack = (tech) => {
   for (let i = 0; i < audioTracks.length; i++) {
     if (audioTracks[i].enabled) {
       tech.el_.vjs_setProperty('audioTrack', audioTracks[i].id);
+      return;
     }
   }
 };
@@ -29,6 +30,7 @@ export const setupAudioTracks = (tech) => {
   const enabledID = tech.el_.vjs_getProperty('audioTrack');
 
   audioTracks.forEach((track) => {
+    track.id = track.id + '';
     track.label = track.title;
     track.enabled = track.id === enabledID;
     tech.audioTracks().addTrack(new videojs.AudioTrack(track));

@@ -1,6 +1,6 @@
 import QUnit from 'qunit';
 import { createRepresentation, createRepresentations } from '../src/representations.js';
-import { makeMochTech } from '../test/util/util.js';
+import { makeMochTech } from './util/util.js';
 
 QUnit.module('Representations API');
 
