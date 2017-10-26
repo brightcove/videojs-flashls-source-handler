@@ -30,9 +30,9 @@ export const setupAudioTracks = (tech) => {
   const enabledID = tech.el_.vjs_getProperty('audioTrack');
 
   audioTracks.forEach((track) => {
-    track.id = track.id + '';
     track.label = track.title;
     track.enabled = track.id === enabledID;
+    track.id = track.id + '';
     tech.audioTracks().addTrack(new videojs.AudioTrack(track));
   });
 };

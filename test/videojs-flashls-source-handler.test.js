@@ -79,17 +79,21 @@ QUnit.test('Flashls Audiotracks tests', function(assert) {
     vjsAudioTracks.push(t);
   };
 
-  assert.equal(vjsAudioTracks.length, 0, 'Initial size');
+  assert.equal(vjsAudioTracks.length, 0, 'Initial size of vjsAudioTracks');
 
   setupAudioTracks(tech);
 
   assert.equal(vjsAudioTracks.length, 3, 'Length after setupAudioTracks()');
-  assert.equal(swfAudioTrack, 0, 'Initial Audio track which is enabled');
+  assert.equal(vjsAudioTracks[0].id, '0', 'corrrect id');
+  assert.equal(vjsAudioTracks[0].enabled, true, 'correct audio track enabled');
+  assert.equal(vjsAudioTracks[1].enabled, false, 'Other Audio track are disabled');
+  assert.equal(vjsAudioTracks[2].enabled, false, 'Other Audio track are disabled');
 
   vjsAudioTracks[0].enabled = false;
 
   updateAudioTrack(tech);
-  assert.equal(swfAudioTrack, 0, 'None of the track is enabled');
+  assert.equal(swfAudioTrack, 0,
+  'When all tracks are disabled, it does not set any track');
 
   vjsAudioTracks[0].enabled = true;
   vjsAudioTracks[1].enabled = true;
@@ -101,6 +105,6 @@ QUnit.test('Flashls Audiotracks tests', function(assert) {
 
   updateAudioTrack(tech);
 
-  assert.equal(swfAudioTrack, 1, 'Enabled Audio track after switching tracks');
+  assert.equal(swfAudioTrack, 1, 'Correct enabled audio track id after switching tracks');
 
 });
