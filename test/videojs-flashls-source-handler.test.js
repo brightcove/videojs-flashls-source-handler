@@ -91,18 +91,21 @@ QUnit.test('Flashls Audiotracks tests', function(assert) {
 
   vjsAudioTracks[0].enabled = false;
 
+  swfAudioTrack = -1;
   updateAudioTrack(tech);
-  assert.equal(swfAudioTrack, 0,
+  assert.equal(swfAudioTrack, -1,
   'When all tracks are disabled, it does not set any track');
 
   vjsAudioTracks[0].enabled = true;
   vjsAudioTracks[1].enabled = true;
 
+  swfAudioTrack = -1;
   updateAudioTrack(tech);
   assert.equal(swfAudioTrack, 0,
   'When more than 1 track is enabled, set the first track in list as enabled');
   vjsAudioTracks[0].enabled = false;
 
+  swfAudioTrack = -1;
   updateAudioTrack(tech);
 
   assert.equal(swfAudioTrack, 1, 'Correct enabled audio track id after switching tracks');
