@@ -1,7 +1,9 @@
 import document from 'global/document';
+
 import QUnit from 'qunit';
 import sinon from 'sinon';
 import videojs from 'video.js';
+
 import handler from '../src/index';
 
 QUnit.test('the environment is sane', function(assert) {
@@ -20,6 +22,7 @@ QUnit.module('videojs-flashls-source-handler', {
     // before any player is created; otherwise, timers could get created
     // with the actual timer methods!
     this.clock = sinon.useFakeTimers();
+
     this.fixture = document.getElementById('qunit-fixture');
     this.video = document.createElement('video');
     this.fixture.appendChild(this.video);
@@ -31,3 +34,4 @@ QUnit.module('videojs-flashls-source-handler', {
     this.clock.restore();
   }
 });
+
