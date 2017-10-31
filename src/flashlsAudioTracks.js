@@ -8,11 +8,25 @@ import videojs from 'video.js';
  * @function updateAudioTrack
  */
 export const updateAudioTrack = (tech) => {
-  const audioTracks = tech.audioTracks();
+  const audioTracks = tech.el_.vjs_getProperty('audioTracks');
+  const vjsAudioTracks = tech.audioTracks();
+  let enabledTrackId = null;
+
+  for (let i = 0; i < vjsAudioTracks.length; i++) {
+    if (vjsAudioTracks[i].enabled) {
+      enabledTrackId = vjsAudioTracks[i].id;
+      break;
+    }
+  }
+
+  if (enabledTrackId === null) {
+    // no tracks enabled, do nothing
+    return;
+  }
 
   for (let i = 0; i < audioTracks.length; i++) {
-    if (audioTracks[i].enabled) {
-      tech.el_.vjs_setProperty('audioTrack', audioTracks[i].id);
+    if (enabledTrackId === audioTracks[i].title) {
+      tech.el_.vjs_setProperty('audioTrack', i);
       return;
     }
   }
@@ -26,13 +40,19 @@ export const updateAudioTrack = (tech) => {
  * @function onTrackChanged
  */
 export const setupAudioTracks = (tech) => {
+  const altAudioTracks = tech.el_.vjs_getProperty('altAudioTracks');
   const audioTracks = tech.el_.vjs_getProperty('audioTracks');
-  const enabledID = tech.el_.vjs_getProperty('audioTrack');
+  const enabledIndex = tech.el_.vjs_getProperty('audioTrack');
 
-  audioTracks.forEach((track) => {
-    track.label = track.title;
-    track.enabled = track.id === enabledID;
-    track.id = track.id + '';
-    tech.audioTracks().addTrack(new videojs.AudioTrack(track));
+  audioTracks.forEach((track, index) => {
+    const altTrack = altAudioTracks[track.id];
+
+    tech.audioTracks().addTrack(new videojs.AudioTrack({
+      id: altTrack.name,
+      enabled: enabledIndex === index,
+      language: altTrack.lang,
+      default: altTrack.default_track,
+      label: altTrack.name
+    }));
   });
 };
