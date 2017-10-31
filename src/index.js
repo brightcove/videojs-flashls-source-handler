@@ -3,6 +3,7 @@ import window from 'global/window';
 import { Cea608Stream } from 'mux.js/lib/m2ts/caption-stream';
 import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
 import { createRepresentations } from './representations.js';
+import { updateAudioTrack, setupAudioTracks } from './flashlsAudioTracks.js';
 
 /**
  * Define properties on a cue for backwards compatability,
@@ -205,6 +206,7 @@ class FlashlsHandler {
     this.onMetadataStreamData_ = this.onMetadataStreamData_.bind(this);
     this.onCea608StreamData_ = this.onCea608StreamData_.bind(this);
     this.onLevelSwitch_ = this.onLevelSwitch_.bind(this);
+    this.onAudioTrackChanged = this.onAudioTrackChanged.bind(this);
 
     this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
     this.tech_.on('seeked', this.onSeeked_);
@@ -261,6 +263,17 @@ class FlashlsHandler {
       updateSelectedIndex(this.qualityLevels_,
                           this.tech_.el_.vjs_getProperty('level') + '');
     }
+
+    setupAudioTracks(this.tech_);
+    this.tech_.audioTracks().on('change', this.onAudioTrackChanged);
+  }
+
+  /**
+   * Event listener for the change event. This will update the selected index of the
+   * audio track list with the new active track.
+   */
+  onAudioTrackChanged() {
+    updateAudioTrack(this.tech_);
   }
 
   /**
@@ -446,6 +459,7 @@ class FlashlsHandler {
     this.tech_.off('seeked', this.onSeeked_);
     this.tech_.off('id3updated', this.onId3updated_);
     this.tech_.off('captiondata', this.onCaptionData_);
+    this.tech_.audioTracks().off('change', this.onAudioTrackChanged);
 
     if (this.qualityLevels_) {
       this.qualityLevels_.dispose();

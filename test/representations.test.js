@@ -1,26 +1,6 @@
 import QUnit from 'qunit';
 import { createRepresentation, createRepresentations } from '../src/representations.js';
-
-const noop = () => {};
-
-/* eslint-disable camelcase */
-const makeMochTech = (getters, setters) => {
-  return {
-    el_: {
-      vjs_getProperty(prop) {
-        const getProp = getters[prop] || noop;
-
-        return getProp();
-      },
-      vjs_setProperty(prop, value) {
-        const setProp = setters[prop] || noop;
-
-        return setProp(value);
-      }
-    }
-  };
-};
-/* eslint-enable camelcase */
+import { makeMochTech } from './util/util.js';
 
 QUnit.module('Representations API');
 
