@@ -14,9 +14,11 @@ To include videojs-flashls-source-handler on your website or web application, us
 
 ## The SWF
 
-This plugin sets the video.js option for the flash SWF to load the SWF from the unpkg CDN https://unpkg.com/@brightcove/videojs-flashls-swf/dist/video-js.swf
+This plugin requires the use of a [customized SWF](https://github.com/brightcove/videojs-flashls-swf) that is not included in videojs-flash.
 
-The SWF is also provided in this project's dist/ folder. We highly recommend hosting the SWF yourself as unpkg does not provide uptime or support guarantees.
+The SWF is available on the unpkg CDN https://unpkg.com/@brightcove/videojs-flashls-swf/dist/video-js.swf and is provided in this project's `dist/` folder. We highly recommend hosting the SWF yourself as unpkg does not provide uptime or support guarantees.
+
+`videojs.options.flash.swf = '//path/to/swf';`
 
 ### `<script>` Tag
 
