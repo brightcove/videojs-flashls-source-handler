@@ -1,5 +1,5 @@
 {
-  "name": "videojs-flashls-source-handler",
+  "name": "@brightcove/videojs-flashls-source-handler",
   "version": "1.1.2",
   "description": "A source handler to integrate flashls with video.js",
   "main": "es5/index.js",
