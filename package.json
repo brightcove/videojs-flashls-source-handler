@@ -16,6 +16,7 @@
     "build:js:collapse": "bundle-collapser dist/videojs-flashls-source-handler.js -o dist/videojs-flashls-source-handler.min.js",
     "build:js:uglify": "uglifyjs dist/videojs-flashls-source-handler.min.js --comments --mangle --compress -o dist/videojs-flashls-source-handler.min.js",
     "build:test": "babel-node scripts/build-test.js",
+    "build:swf": "cp node_modules/@brightcove/videojs-flashls-swf/dist/video-js.swf dist/",
     "clean": "rimraf dist test/dist es5 && mkdirp dist test/dist es5",
     "lint": "vjsstandard",
     "start": "babel-node scripts/server.js",
@@ -74,7 +75,8 @@
     "browserify-versionify": "^1.0.6",
     "global": "^4.3.0",
     "mux.js": "^3.0.4",
-    "video.js": "^5.10.1"
+    "video.js": "^5.10.1",
+    "@brightcove/videojs-flashls-swf": "6.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",

@@ -12,6 +12,14 @@ npm install --save videojs-flashls-source-handler
 
 To include videojs-flashls-source-handler on your website or web application, use any of the following methods.
 
+## The SWF
+
+This plugin requires the use of a [customized SWF](https://github.com/brightcove/videojs-flashls-swf) that is not included in videojs-flash.
+
+The SWF is available on the unpkg CDN https://unpkg.com/@brightcove/videojs-flashls-swf/dist/video-js.swf and is provided in this project's `dist/` folder. We highly recommend hosting the SWF yourself as unpkg does not provide uptime or support guarantees.
+
+`videojs.options.flash.swf = '//path/to/swf';`
+
 ### `<script>` Tag
 
 This is the simplest case. Get the script in whatever way you prefer and include the plugin _after_ you include [video.js][videojs], so that the `videojs` global is available.
