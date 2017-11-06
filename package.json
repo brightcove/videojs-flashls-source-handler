@@ -76,7 +76,7 @@
     "global": "^4.3.0",
     "mux.js": "^3.0.4",
     "video.js": "^5.10.1",
-    "@brightcove/videojs-flashls-swf": "6.0.0"
+    "@brightcove/videojs-flashls-swf": "6.0.1"
   },
   "devDependencies": {
     "babel-cli": "^6.14.0",
