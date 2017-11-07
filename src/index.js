@@ -215,6 +215,10 @@ class FlashlsHandler {
 
     this.metadataStream_.on('data', this.onMetadataStreamData_);
     this.cea608Stream_.on('data', this.onCea608StreamData_);
+
+    this.playlists = {
+      media: () => this.media_()
+    };
   }
 
   src(source) {
@@ -242,6 +246,27 @@ class FlashlsHandler {
     return videojs.createTimeRange(seekableStart, seekableEnd);
   }
 
+  media_() {
+    const levels = this.tech_.el_.vjs_getProperty('levels');
+    const level = this.tech_.el_.vjs_getProperty('level');
+    let media;
+
+    if (levels.length) {
+      media = {
+        resolvedUri: Object.values(levels[level].urls)[0],
+        attributes: {
+          BANDWIDTH: levels[level].bitrate,
+          RESOLUTION: {
+            width: levels[level].width,
+            height: levels[level].height
+          }
+        }
+      };
+    }
+
+    return media;
+  }
+
   /**
    * Event listener for the loadedmetadata event. This sets up the representations api
    * and populates the quality levels list if it is available on the player
@@ -258,6 +283,9 @@ class FlashlsHandler {
       });
 
       this.tech_.on('levelswitch', this.onLevelSwitch_);
+      player.tech_.on('levelswitch', () => {
+        player.trigger({ type: 'mediachange', bubbles: true});
+      });
 
       // update initial selected index
       updateSelectedIndex(this.qualityLevels_,
@@ -524,7 +552,6 @@ FlashlsSourceHandler.canHandleSource = function(source, options) {
  */
 FlashlsSourceHandler.handleSource = function(source, tech, options) {
   tech.hls = new FlashlsHandler(source, tech, options);
-
   tech.hls.src(source);
   return tech.hls;
 };
