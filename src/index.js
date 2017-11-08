@@ -175,8 +175,6 @@ const updateSelectedIndex = (qualityLevels, id) => {
 
 class FlashlsHandler {
   constructor(source, tech, options) {
-
-
     // tech.player() is deprecated but setup a reference to HLS for
     // backwards-compatibility
     if (tech.options_ && tech.options_.playerId) {
