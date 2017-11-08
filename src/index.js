@@ -191,6 +191,12 @@ class FlashlsHandler {
       }
     }
 
+    Object.defineProperty(this, 'stats', {
+      get() {
+        return this.tech_.el_.vjs_getProperty('stats');
+      }
+    });
+
     this.tech_ = tech;
     this.metadataTrack_ = null;
     this.inbandTextTrack_ = null;
