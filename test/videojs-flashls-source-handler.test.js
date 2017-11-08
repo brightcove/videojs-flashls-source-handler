@@ -34,4 +34,3 @@ QUnit.module('videojs-flashls-source-handler', {
     this.clock.restore();
   }
 });
-

@@ -219,6 +219,8 @@ class FlashlsHandler {
     this.playlists = {
       media: () => this.media_()
     };
+
+    this.tech_.on('levelswitch', this.onLevelSwitch_);
   }
 
   src(source) {
@@ -253,7 +255,7 @@ class FlashlsHandler {
 
     if (levels.length) {
       media = {
-        resolvedUri: Object.values(levels[level].urls)[0],
+        resolvedUri: levels[level].url,
         attributes: {
           BANDWIDTH: levels[level].bitrate,
           RESOLUTION: {
@@ -280,11 +282,6 @@ class FlashlsHandler {
       this.qualityLevels_ = player.qualityLevels();
       this.representations().forEach((representation) => {
         this.qualityLevels_.addQualityLevel(representation);
-      });
-
-      this.tech_.on('levelswitch', this.onLevelSwitch_);
-      player.tech_.on('levelswitch', () => {
-        player.trigger({ type: 'mediachange', bubbles: true});
       });
 
       // update initial selected index
@@ -314,7 +311,10 @@ class FlashlsHandler {
    *        The active level will be the first element of the array
    */
   onLevelSwitch_(event, level) {
-    updateSelectedIndex(this.qualityLevels_, level[0].levelIndex + '');
+    if(this.qualityLevels_) {
+      updateSelectedIndex(this.qualityLevels_, level[0].levelIndex + '');
+    }
+    this.tech_.trigger({ type: 'mediachange', bubbles: true});
   }
 
   /**
@@ -488,10 +488,10 @@ class FlashlsHandler {
     this.tech_.off('id3updated', this.onId3updated_);
     this.tech_.off('captiondata', this.onCaptionData_);
     this.tech_.audioTracks().off('change', this.onAudioTrackChanged);
+    this.tech_.off('levelswitch', this.onLevelSwitch_);
 
     if (this.qualityLevels_) {
       this.qualityLevels_.dispose();
-      this.tech_.off('levelswitch', this.onLevelSwitch_);
     }
   }
 }
