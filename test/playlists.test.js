@@ -54,7 +54,7 @@ QUnit.test('triggers an event when the active media changes', function(assert) {
   });
 
   assert.equal(mediaChange, 0, 'Initial selection is not a media changing');
-  
+
   currentLevel = 1;
   tech.trigger('levelswitch');
   assert.equal(mediaChange, 1, 'fired a mediachange');
@@ -62,7 +62,7 @@ QUnit.test('triggers an event when the active media changes', function(assert) {
   let media = handler.playlists.media();
 
   assert.equal(media.resolvedUri, 'playlist-1-uri', 'correct resolvedUri');
-  assert.equal(media.attributes.BANDWIDTH, 12140000, 'correct BANDWIDTH' );
+  assert.equal(media.attributes.BANDWIDTH, 12140000, 'correct BANDWIDTH');
   assert.equal(media.attributes.RESOLUTION.width, 1280, 'correct width');
   assert.equal(media.attributes.RESOLUTION.height, 720, 'correct height');
 });
