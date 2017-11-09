@@ -212,6 +212,7 @@ export class FlashlsHandler {
     this.tech_.on('seeked', this.onSeeked_);
     this.tech_.on('id3updated', this.onId3updated_);
     this.tech_.on('captiondata', this.onCaptionData_);
+    this.tech_.on('levelswitch', this.onLevelSwitch_);
 
     this.metadataStream_.on('data', this.onMetadataStreamData_);
     this.cea608Stream_.on('data', this.onCea608StreamData_);
@@ -219,8 +220,6 @@ export class FlashlsHandler {
     this.playlists = {
       media: () => this.media_()
     };
-
-    this.tech_.on('levelswitch', this.onLevelSwitch_);
   }
 
   src(source) {
