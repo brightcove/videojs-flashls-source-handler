@@ -173,7 +173,7 @@ const updateSelectedIndex = (qualityLevels, id) => {
   });
 };
 
-class FlashlsHandler {
+export class FlashlsHandler {
   constructor(source, tech, options) {
     // tech.player() is deprecated but setup a reference to HLS for
     // backwards-compatibility
@@ -311,7 +311,7 @@ class FlashlsHandler {
    *        The active level will be the first element of the array
    */
   onLevelSwitch_(event, level) {
-    if(this.qualityLevels_) {
+    if (this.qualityLevels_) {
       updateSelectedIndex(this.qualityLevels_, level[0].levelIndex + '');
     }
     this.tech_.trigger({ type: 'mediachange', bubbles: true});

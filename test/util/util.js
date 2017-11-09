@@ -1,9 +1,11 @@
+import videojs from 'video.js';
+
 export const noop = () => {};
 
 /* eslint-disable camelcase */
 export const makeMochTech = (getters, setters) => {
-  return {
-    el_: {
+  const tech = new videojs.EventTarget();
+  tech.el_ = {
       vjs_getProperty(prop) {
         const getProp = getters[prop] || noop;
 
@@ -15,7 +17,7 @@ export const makeMochTech = (getters, setters) => {
         return setProp(value);
       }
     }
-  };
+  return tech;
 };
 
 /* eslint-enable camelcase */
