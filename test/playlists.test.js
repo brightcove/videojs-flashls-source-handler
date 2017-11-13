@@ -14,13 +14,9 @@ QUnit.test('triggers an event when the active media changes', function(assert) {
   const handler = new FlashlsHandler('this.m3u8', tech, {});
   /* eslint-enable no-unused-vars */
 
-  tech.trigger('levelswitch');
-
   tech.on('mediachange', () => {
     mediaChange++;
   });
-
-  assert.equal(mediaChange, 0, 'Initial selection is not a media changing');
 
   tech.trigger('levelswitch');
   assert.equal(mediaChange, 1, 'fired a mediachange');
