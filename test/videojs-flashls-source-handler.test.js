@@ -1,37 +1,35 @@
-import document from 'global/document';
-
 import QUnit from 'qunit';
 import sinon from 'sinon';
 import videojs from 'video.js';
 
-import handler from '../src/index';
+import { default as FlashlsSourceHandler, FlashlsHandler } from '../src/index';
+import { makeMochTech } from './util/util.js';
 
 QUnit.test('the environment is sane', function(assert) {
   assert.strictEqual(typeof Array.isArray, 'function', 'es5 exists');
   assert.strictEqual(typeof sinon, 'object', 'sinon exists');
   assert.strictEqual(typeof videojs, 'function', 'videojs exists');
-  assert.strictEqual(typeof handler, 'object', 'handler is a function');
+  assert.strictEqual(typeof FlashlsSourceHandler, 'object', 'handler is a function');
 });
 
-QUnit.module('videojs-flashls-source-handler', {
+QUnit.module('videojs-flashls-source-handler');
 
-  beforeEach() {
+QUnit.test('can get stats from handler', function(assert) {
+  const stats = {
+    bandwidth: 100,
+    mediaRequests: 1,
+    mediaRequestsAborted: 2,
+    mediaRequestsTimedout: 3,
+    mediaRequestsErrored: 4,
+    mediaTransferDuration: 5,
+    mediaBytesTransferred: 6,
+    mediaSecondsLoaded: 7
+  };
 
-    // Mock the environment's timers because certain things - particularly
-    // player readiness - are asynchronous in video.js 5. This MUST come
-    // before any player is created; otherwise, timers could get created
-    // with the actual timer methods!
-    this.clock = sinon.useFakeTimers();
+  const tech = makeMochTech({ stats: () => stats });
+  const handler = new FlashlsHandler('src', tech, {});
 
-    this.fixture = document.getElementById('qunit-fixture');
-    this.video = document.createElement('video');
-    this.fixture.appendChild(this.video);
-    this.player = videojs(this.video);
-  },
-
-  afterEach() {
-    this.player.dispose();
-    this.clock.restore();
-  }
+  assert.equal(handler.bandwidth, 100, 'can get hls.bandwidth');
+  assert.deepEqual(handler.stats, stats, 'can get hls.stats');
 });
 
