@@ -191,9 +191,16 @@ export class FlashlsHandler {
       }
     }
 
-    Object.defineProperty(this, 'stats', {
-      get() {
-        return this.tech_.el_.vjs_getProperty('stats');
+    Object.defineProperties(this, {
+      stats: {
+        get() {
+          return this.tech_.el_.vjs_getProperty('stats');
+        }
+      },
+      bandwidth: {
+        get() {
+          return this.tech_.el_.vjs_getProperty('stats').bandwidth;
+        }
       }
     });
 
