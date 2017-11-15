@@ -5,21 +5,30 @@ import { FlashlsHandler } from '../src/index.js';
 QUnit.module('Flashls playlists');
 
 QUnit.test('triggers an event when the active media changes', function(assert) {
-  let mediaChange = 0;
+  let techMediaChange = 0;
+  let playlistsMediaChange = 0;
 
   const tech = makeMochTech({});
-
-  /* eslint-disable no-unused-vars */
-  // need to create handler to setup event listeners
   const handler = new FlashlsHandler('this.m3u8', tech, {});
-  /* eslint-enable no-unused-vars */
 
-  tech.on('mediachange', () => {
-    mediaChange++;
-  });
+  tech.on('mediachange', () => techMediaChange++);
+  handler.playlists.on('mediachange', () => playlistsMediaChange++);
 
   tech.trigger('levelswitch');
-  assert.equal(mediaChange, 1, 'fired a mediachange');
+  assert.equal(techMediaChange, 1, 'tech fired a mediachange');
+  assert.equal(playlistsMediaChange, 1, 'playlists fired a mediachange');
+});
+
+QUnit.test('triggers an event when a playlist is loaded', function(assert) {
+  let loadedplaylist = 0;
+
+  const tech = makeMochTech({});
+  const handler = new FlashlsHandler('this.m3u8', tech, {});
+
+  handler.playlists.on('loadedplaylist', () => loadedplaylist++);
+
+  tech.trigger('levelloaded');
+  assert.equal(loadedplaylist, 1, 'playlists fired a loadedplaylist');
 });
 
 QUnit.test('mediachange changes playlist.media function', function(assert) {
