@@ -219,6 +219,8 @@ export class FlashlsHandler {
     this.onMetadataStreamData_ = this.onMetadataStreamData_.bind(this);
     this.onCea608StreamData_ = this.onCea608StreamData_.bind(this);
     this.onLevelSwitch_ = this.onLevelSwitch_.bind(this);
+    this.onLevelLoaded_ = this.onLevelLoaded_.bind(this);
+    this.onFragmentLoaded_ = this.onFragmentLoaded_.bind(this);
     this.onAudioTrackChanged = this.onAudioTrackChanged.bind(this);
 
     this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
@@ -226,13 +228,14 @@ export class FlashlsHandler {
     this.tech_.on('id3updated', this.onId3updated_);
     this.tech_.on('captiondata', this.onCaptionData_);
     this.tech_.on('levelswitch', this.onLevelSwitch_);
+    this.tech_.on('levelloaded', this.onLevelLoaded_);
+    this.tech_.on('fragmentloaded', this.onFragmentLoaded_);
 
     this.metadataStream_.on('data', this.onMetadataStreamData_);
     this.cea608Stream_.on('data', this.onCea608StreamData_);
 
-    this.playlists = {
-      media: () => this.media_()
-    };
+    this.playlists = new videojs.EventTarget();
+    this.playlists.media = () => this.media_();
   }
 
   src(source) {
@@ -326,7 +329,22 @@ export class FlashlsHandler {
     if (this.qualityLevels_) {
       updateSelectedIndex(this.qualityLevels_, level[0].levelIndex + '');
     }
+    this.playlists.trigger('mediachange');
     this.tech_.trigger({ type: 'mediachange', bubbles: true});
+  }
+
+  /**
+   * Event listener for the levelloaded event.
+   */
+  onLevelLoaded_() {
+    this.playlists.trigger('loadedplaylist');
+  }
+
+  /**
+   * Event listener for the fragmentloaded event.
+   */
+  onFragmentLoaded_() {
+    this.tech_.trigger('bandwidthupdate');
   }
 
   /**
@@ -501,6 +519,8 @@ export class FlashlsHandler {
     this.tech_.off('captiondata', this.onCaptionData_);
     this.tech_.audioTracks().off('change', this.onAudioTrackChanged);
     this.tech_.off('levelswitch', this.onLevelSwitch_);
+    this.tech_.off('levelloaded', this.onLevelLoaded_);
+    this.tech_.off('fragmentloaded', this.onFragmentLoaded_);
 
     if (this.qualityLevels_) {
       this.qualityLevels_.dispose();

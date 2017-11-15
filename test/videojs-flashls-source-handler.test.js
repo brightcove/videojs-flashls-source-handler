@@ -33,3 +33,19 @@ QUnit.test('can get stats from handler', function(assert) {
   assert.deepEqual(handler.stats, stats, 'can get hls.stats');
 });
 
+QUnit.test('triggers an event when bandwidth updates after segment load',
+function(assert) {
+  let bandwidthupdate = 0;
+
+  const tech = makeMochTech({});
+
+  /* eslint-disable no-unused-vars */
+  // need to create handler to setup event listeners
+  const handler = new FlashlsHandler('this.m3u8', tech, {});
+  /* eslint-enable no-unused-vars */
+
+  tech.on('bandwidthupdate', () => bandwidthupdate++);
+
+  tech.trigger('fragmentloaded');
+  assert.equal(bandwidthupdate, 1, 'tech fired a bandwidthupdate');
+});
