@@ -75,7 +75,7 @@
     "@brightcove/videojs-flashls-swf": "6.2.0",
     "browserify-versionify": "^1.0.6",
     "global": "^4.3.0",
-    "mux.js": "^3.0.4",
+    "mux.js": "^4.3.2",
     "video.js": "^5.10.1"
   },
   "devDependencies": {

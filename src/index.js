@@ -1,6 +1,6 @@
 import videojs from 'video.js';
 import window from 'global/window';
-import { Cea608Stream } from 'mux.js/lib/m2ts/caption-stream';
+import { CaptionStream } from 'mux.js/lib/m2ts/caption-stream';
 import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
 import { createRepresentations } from './representations.js';
 import { updateAudioTrack, setupAudioTracks } from './flashlsAudioTracks.js';
@@ -68,37 +68,6 @@ const stringToByteArray = function(data) {
   }
 
   return bytes;
-};
-
-// see CEA-708-D, section 4.4
-const parseCaptionPackets = function(pts, userData) {
-  let results = [];
-  let i;
-  let count;
-  let offset;
-  let data;
-
-  // if this is just filler, return immediately
-  if (!(userData[0] & 0x40)) {
-    return results;
-  }
-
-  // parse out the cc_data_1 and cc_data_2 fields
-  count = userData[0] & 0x1f;
-  for (i = 0; i < count; i++) {
-    offset = i * 3;
-    data = {
-      type: userData[offset + 2] & 0x03,
-      pts
-    };
-
-    // capture cc data when cc_valid is 1
-    if (userData[offset + 2] & 0x04) {
-      data.ccData = (userData[offset + 3] << 8) | userData[offset + 4];
-      results.push(data);
-    }
-  }
-  return results;
 };
 
 /**
@@ -206,10 +175,9 @@ export class FlashlsHandler {
 
     this.tech_ = tech;
     this.metadataTrack_ = null;
-    this.inbandTextTrack_ = null;
+    this.inbandTextTracks_ = {};
     this.metadataStream_ = new MetadataStream();
-    this.cea608Stream_ = new Cea608Stream();
-    this.captionPackets_ = [];
+    this.captionStream_ = new CaptionStream();
 
     // bind event listeners to this context
     this.onLoadedmetadata_ = this.onLoadedmetadata_.bind(this);
@@ -217,7 +185,7 @@ export class FlashlsHandler {
     this.onId3updated_ = this.onId3updated_.bind(this);
     this.onCaptionData_ = this.onCaptionData_.bind(this);
     this.onMetadataStreamData_ = this.onMetadataStreamData_.bind(this);
-    this.onCea608StreamData_ = this.onCea608StreamData_.bind(this);
+    this.onCaptionStreamData_ = this.onCaptionStreamData_.bind(this);
     this.onLevelSwitch_ = this.onLevelSwitch_.bind(this);
     this.onLevelLoaded_ = this.onLevelLoaded_.bind(this);
     this.onFragmentLoaded_ = this.onFragmentLoaded_.bind(this);
@@ -232,7 +200,7 @@ export class FlashlsHandler {
     this.tech_.on('fragmentloaded', this.onFragmentLoaded_);
 
     this.metadataStream_.on('data', this.onMetadataStreamData_);
-    this.cea608Stream_.on('data', this.onCea608StreamData_);
+    this.captionStream_.on('data', this.onCaptionStreamData_);
 
     this.playlists = new videojs.EventTarget();
     this.playlists.media = () => this.media_();
@@ -345,6 +313,7 @@ export class FlashlsHandler {
    */
   onFragmentLoaded_() {
     this.tech_.trigger('bandwidthupdate');
+    this.captionStream_.flush();
   }
 
   /**
@@ -356,11 +325,11 @@ export class FlashlsHandler {
 
     let buffered = this.tech_.buffered();
 
-    if (buffered.length === 1) {
-      removeCuesFromTrack(0, buffered.start(0), this.inbandTextTrack_);
-      removeCuesFromTrack(buffered.end(0), Infinity, this.inbandTextTrack_);
-    } else {
-      removeCuesFromTrack(0, Infinity, this.inbandTextTrack_);
+    if (!buffered.length) {
+      Object.keys(this.inbandTextTracks_).forEach((key) => {
+        removeCuesFromTrack(0, Infinity, this.inbandTextTracks_[key]);
+      });
+      this.captionStream_.reset();
     }
   }
 
@@ -452,38 +421,14 @@ export class FlashlsHandler {
    *        The caption packets array will be the first element of data.
    */
   onCaptionData_(event, data) {
-    let captions = data[0].map((d) => {
-      return {
-        pts: d.pos * 90000,
-        bytes: stringToByteArray(window.atob(d.data))
-      };
-    });
-
-    captions.forEach((caption) => {
-      this.captionPackets_ = this.captionPackets_.concat(
-        parseCaptionPackets(caption.pts, caption.bytes));
-    });
-
-    if (this.captionPackets_.length) {
-      // In Chrome, the Array#sort function is not stable so add a
-      // presortIndex that we can use to ensure we get a stable-sort
-      this.captionPackets_.forEach((elem, idx) => {
-        elem.presortIndex = idx;
+    data[0].forEach((d) => {
+      this.captionStream_.push({
+        pts: d.pts * 90000,
+        dts: d.dts * 90000,
+        escapedRBSP: stringToByteArray(window.atob(d.data)),
+        nalUnitType: 'sei_rbsp'
       });
-
-      // sort caption byte-pairs based on their PTS values
-      this.captionPackets_.sort((a, b) => {
-        if (a.pts === b.pts) {
-          return a.presortIndex - b.presortIndex;
-        }
-        return a.pts - b.pts;
-      });
-
-      // Push each caption into Cea608Stream
-      this.captionPackets_.forEach(this.cea608Stream_.push, this.cea608Stream_);
-      this.captionPackets_.length = 0;
-      this.cea608Stream_.flush();
-    }
+    });
   }
 
   /**
@@ -493,19 +438,20 @@ export class FlashlsHandler {
    * @param {Object} caption
    *        The caption object
    */
-  onCea608StreamData_(caption) {
+  onCaptionStreamData_(caption) {
     if (caption) {
-      if (!this.inbandTextTrack_) {
-        removeExistingTrack(this.tech_, 'captions', 'cc1');
-        this.inbandTextTrack_ = this.tech_.addRemoteTextTrack({
+      if (!this.inbandTextTracks_[caption.stream]) {
+        removeExistingTrack(this.tech_, 'captions', caption.stream);
+        this.inbandTextTracks_[caption.stream] = this.tech_.addRemoteTextTrack({
           kind: 'captions',
-          label: 'cc1'
+          label: caption.stream,
+          id: caption.stream
         }, false).track;
       }
 
-      removeOldCues(this.tech_.buffered(), this.inbandTextTrack_);
+      removeOldCues(this.tech_.buffered(), this.inbandTextTracks_[caption.stream]);
 
-      this.inbandTextTrack_.addCue(
+      this.inbandTextTracks_[caption.stream].addCue(
         new window.VTTCue(caption.startPts / 90000,
                           caption.endPts / 90000,
                           caption.text));
