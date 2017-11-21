@@ -323,11 +323,17 @@ export class FlashlsHandler {
   onSeeked_() {
     removeCuesFromTrack(0, Infinity, this.metadataTrack_);
 
-    let buffered = this.tech_.buffered();
+    const buffered = this.tech_.buffered();
+    const trackIds = Object.keys(this.inbandTextTracks_);
 
-    if (!buffered.length) {
-      Object.keys(this.inbandTextTracks_).forEach((key) => {
-        removeCuesFromTrack(0, Infinity, this.inbandTextTracks_[key]);
+    if (buffered.length === 1) {
+      trackIds.forEach((id) => {
+        removeCuesFromTrack(0, buffered.start(0), this.inbandTextTracks_[id]);
+        removeCuesFromTrack(buffered.end(0), Infinity, this.inbandTextTracks_[id]);
+      });
+    } else {
+      trackIds.forEach((id) => {
+        removeCuesFromTrack(0, Infinity, this.inbandTextTracks_[id]);
       });
       this.captionStream_.reset();
     }
