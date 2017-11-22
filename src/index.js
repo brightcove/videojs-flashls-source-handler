@@ -142,6 +142,39 @@ const updateSelectedIndex = (qualityLevels, id) => {
   });
 };
 
+// Fudge factor to account for TimeRanges rounding
+const TIME_FUDGE_FACTOR = 1 / 30;
+
+const filterRanges = function(timeRanges, predicate) {
+  let results = [];
+  let i;
+
+  if (timeRanges && timeRanges.length) {
+    // Search for ranges that match the predicate
+    for (i = 0; i < timeRanges.length; i++) {
+      if (predicate(timeRanges.start(i), timeRanges.end(i))) {
+        results.push([timeRanges.start(i), timeRanges.end(i)]);
+      }
+    }
+  }
+
+  return videojs.createTimeRanges(results);
+};
+
+/**
+ * Attempts to find the buffered TimeRange that contains the specified
+ * time.
+ * @param {TimeRanges} buffered - the TimeRanges object to query
+ * @param {number} time  - the time to filter on.
+ * @returns {TimeRanges} a new TimeRanges object
+ */
+const findRange = function(buffered, time) {
+  return filterRanges(buffered, function(start, end) {
+    return start - TIME_FUDGE_FACTOR <= time &&
+      end + TIME_FUDGE_FACTOR >= time;
+  });
+};
+
 export class FlashlsHandler {
   constructor(source, tech, options) {
     // tech.player() is deprecated but setup a reference to HLS for
@@ -192,7 +225,7 @@ export class FlashlsHandler {
     this.onAudioTrackChanged = this.onAudioTrackChanged.bind(this);
 
     this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
-    this.tech_.on('seeked', this.onSeeked_);
+    this.tech_.on('seeking', this.onSeeked_);
     this.tech_.on('id3updated', this.onId3updated_);
     this.tech_.on('captiondata', this.onCaptionData_);
     this.tech_.on('levelswitch', this.onLevelSwitch_);
@@ -323,16 +356,10 @@ export class FlashlsHandler {
   onSeeked_() {
     removeCuesFromTrack(0, Infinity, this.metadataTrack_);
 
-    const buffered = this.tech_.buffered();
-    const trackIds = Object.keys(this.inbandTextTracks_);
+    const buffered = findRange(this.tech_.buffered(), this.tech_.currentTime());
 
-    if (buffered.length === 1) {
-      trackIds.forEach((id) => {
-        removeCuesFromTrack(0, buffered.start(0), this.inbandTextTracks_[id]);
-        removeCuesFromTrack(buffered.end(0), Infinity, this.inbandTextTracks_[id]);
-      });
-    } else {
-      trackIds.forEach((id) => {
+    if (!buffered.length) {
+      Object.keys(this.inbandTextTracks_).forEach((id) => {
         removeCuesFromTrack(0, Infinity, this.inbandTextTracks_[id]);
       });
       this.captionStream_.reset();
@@ -429,7 +456,7 @@ export class FlashlsHandler {
   onCaptionData_(event, data) {
     data[0].forEach((d) => {
       this.captionStream_.push({
-        pts: d.pts * 90000,
+        pts: d.pos * 90000,
         dts: d.dts * 90000,
         escapedRBSP: stringToByteArray(window.atob(d.data)),
         nalUnitType: 'sei_rbsp'
