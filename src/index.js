@@ -146,12 +146,11 @@ const updateSelectedIndex = (qualityLevels, id) => {
 const TIME_FUDGE_FACTOR = 1 / 30;
 
 const filterRanges = function(timeRanges, predicate) {
-  let results = [];
-  let i;
+  const results = [];
 
   if (timeRanges && timeRanges.length) {
     // Search for ranges that match the predicate
-    for (i = 0; i < timeRanges.length; i++) {
+    for (let i = 0; i < timeRanges.length; i++) {
       if (predicate(timeRanges.start(i), timeRanges.end(i))) {
         results.push([timeRanges.start(i), timeRanges.end(i)]);
       }
