@@ -213,7 +213,7 @@ export class FlashlsHandler {
 
     // bind event listeners to this context
     this.onLoadedmetadata_ = this.onLoadedmetadata_.bind(this);
-    this.onSeeked_ = this.onSeeked_.bind(this);
+    this.onSeeking_ = this.onSeeking_.bind(this);
     this.onId3updated_ = this.onId3updated_.bind(this);
     this.onCaptionData_ = this.onCaptionData_.bind(this);
     this.onMetadataStreamData_ = this.onMetadataStreamData_.bind(this);
@@ -224,7 +224,7 @@ export class FlashlsHandler {
     this.onAudioTrackChanged = this.onAudioTrackChanged.bind(this);
 
     this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
-    this.tech_.on('seeking', this.onSeeked_);
+    this.tech_.on('seeking', this.onSeeking_);
     this.tech_.on('id3updated', this.onId3updated_);
     this.tech_.on('captiondata', this.onCaptionData_);
     this.tech_.on('levelswitch', this.onLevelSwitch_);
@@ -349,10 +349,10 @@ export class FlashlsHandler {
   }
 
   /**
-   * Event listener for the seeked event. This will remove cues from the metadata track
-   * and inband text track after seeks
+   * Event listener for the seeking event. This will remove cues from the metadata track
+   * and inband text tracks during seeks
    */
-  onSeeked_() {
+  onSeeking_() {
     removeCuesFromTrack(0, Infinity, this.metadataTrack_);
 
     const buffered = findRange(this.tech_.buffered(), this.tech_.currentTime());
@@ -492,7 +492,7 @@ export class FlashlsHandler {
 
   dispose() {
     this.tech_.off('loadedmetadata', this.onLoadedmetadata_);
-    this.tech_.off('seeked', this.onSeeked_);
+    this.tech_.off('seeked', this.onSeeking_);
     this.tech_.off('id3updated', this.onId3updated_);
     this.tech_.off('captiondata', this.onCaptionData_);
     this.tech_.audioTracks().off('change', this.onAudioTrackChanged);
