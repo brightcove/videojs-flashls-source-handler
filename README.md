@@ -1,5 +1,8 @@
 # videojs-flashls-source-handler
 
+[![Build Status][travis-icon]][travis-link]
+[![Slack Status][slack-icon]][slack-link]
+
 A source handler to integrate flashls with video.js
 
 ## Installation
@@ -69,3 +72,7 @@ Apache-2.0. Copyright (c) Brightcove
 
 
 [videojs]: http://videojs.com/
+[slack-icon]: http://slack.videojs.com/badge.svg
+[slack-link]: http://slack.videojs.com
+[travis-icon]: https://travis-ci.org/brightcove/videojs-flashls-source-handler.svg?branch=master
+[travis-link]: https://travis-ci.org/brightcove/videojs-flashls-source-handler
