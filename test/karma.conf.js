@@ -1,23 +1,4 @@
 module.exports = function(config) {
-  var detectBrowsers = {
-      enabled: false,
-      usePhantomJS: false
-    },
-    browsers = config.browsers,
-    reporters = ['dots'];
-
-  // On TC CI, we can only run in Browserstack.
-  if (process.env.BROWSER_STACK_USERNAME) {
-    browsers = ['chrome_bs'];
-    reporters = ['teamcity'];
-  }
-
-  // If no browsers are specified, we enable `karma-detect-browsers`
-  // this will detect all browsers that are available for testing
-  if (!browsers.length) {
-    detectBrowsers.enabled = true;
-  }
-
   config.set({
     basePath: '..',
     frameworks: ['qunit', 'detectBrowsers'],
@@ -30,25 +11,35 @@ module.exports = function(config) {
       'test/dist/bundle.js'
     ],
 
-    browsers: browsers,
-
     customLaunchers: {
-      chrome_bs: {
-        base: 'BrowserStack',
-        browser: 'chrome',
-        os: 'Windows',
-        os_version: '8.1'
+      ChromeHeadlessWithFlags: {
+        base: 'ChromeHeadless',
+        flags: [
+          '--mute-audio',
+          '--no-sandbox',
+          '--no-user-gesture-required'
+        ]
       }
     },
+    detectBrowsers: {
+      usePhantomJS: false,
 
-    browserStack: {
-      project: process.env.npm_package_name,
-      name: process.env.TEAMCITY_PROJECT_NAME + process.env.BUILD_NUMBER,
-      pollingTimeout: 30000
+      // detect what browsers are installed on the system and
+      // use headless mode and flags to allow for playback
+      postDetection: function(browsers) {
+        var newBrowsers = [];
+        if (browsers.indexOf('Chrome') !== -1) {
+          newBrowsers.push('ChromeHeadlessWithFlags');
+        }
+
+        if (browsers.indexOf('Firefox') !== -1) {
+          newBrowsers.push('FirefoxHeadless');
+        }
+
+        return newBrowsers;
+      }
     },
-
-    detectBrowsers: detectBrowsers,
-    reporters: reporters,
+    reporters: ['dots'],
     port: 9876,
     colors: true,
     autoWatch: false,
