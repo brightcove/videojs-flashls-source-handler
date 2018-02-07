@@ -572,5 +572,6 @@ videojs.getTech('Flash').registerSourceHandler(FlashlsSourceHandler, 0);
 
 // Include the version number.
 FlashlsSourceHandler.VERSION = '__VERSION__';
+FlashlsSourceHandler.name = 'videojs-flashls-source-handler';
 
 export default FlashlsSourceHandler;
