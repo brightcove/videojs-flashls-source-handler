@@ -1,5 +1,7 @@
 # videojs-flashls-source-handler
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/brightcove/videojs-flashls-source-handler.svg)](https://greenkeeper.io/)
+
 [![Build Status][travis-icon]][travis-link]
 [![Slack Status][slack-icon]][slack-link]
 
