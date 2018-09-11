@@ -53,99 +53,103 @@ QUnit.test('creates a representation with a working enabled function', function(
 });
 
 QUnit.test('createRepresentations creates a list of representation objects',
-function(assert) {
-  const levels = [
-    {
-      index: 0,
-      width: 640,
-      height: 360,
-      bitrate: 865000
-    },
-    {
-      index: 1,
-      width: 1280,
-      height: 720,
-      bitrate: 12140000
-    },
-    {
-      index: 2,
-      width: void 0,
-      height: void 0,
-      bitrate: 65000,
-      audio: true
-    },
-    {
-      index: 3,
-      width: 1920,
-      height: 1080,
-      bitrate: 16120000
-    }
-  ];
-  const tech = makeMochTech({ levels: () => levels }, {});
+  function(assert) {
+    const levels = [
+      {
+        index: 0,
+        width: 640,
+        height: 360,
+        bitrate: 865000
+      },
+      {
+        index: 1,
+        width: 1280,
+        height: 720,
+        bitrate: 12140000
+      },
+      {
+        index: 2,
+        width: void 0,
+        height: void 0,
+        bitrate: 65000,
+        audio: true
+      },
+      {
+        index: 3,
+        width: 1920,
+        height: 1080,
+        bitrate: 16120000
+      }
+    ];
+    const tech = makeMochTech({ levels: () => levels }, {});
 
-  const representationsApi = createRepresentations(tech);
+    const representationsApi = createRepresentations(tech);
 
-  assert.equal(typeof representationsApi, 'function',
-    'createRepresentations returns a function for getting the list of representations');
+    assert.equal(typeof representationsApi, 'function',
+      'createRepresentations returns a function for getting the list of representations');
 
-  const representations = representationsApi();
+    const representations = representationsApi();
 
-  assert.equal(representations.length, 3, 'created a list of representations');
-  assert.equal(representations[0].id, '0', 'created representation for video');
-  assert.equal(representations[1].id, '1', 'created representation for video');
-  assert.equal(representations[2].id, '3', 'created representation for video');
-});
+    assert.equal(representations.length, 3, 'created a list of representations');
+    assert.equal(representations[0].id, '0', 'created representation for video');
+    assert.equal(representations[1].id, '1', 'created representation for video');
+    assert.equal(representations[2].id, '3', 'created representation for video');
+  });
 
 QUnit.test('representations sets levels on tech correctly when enabling/disabling',
-function(assert) {
-  const levels = [
-    {
-      index: 0,
-      width: 640,
-      height: 360,
-      bitrate: 865000
-    },
-    {
-      index: 1,
-      width: 1280,
-      height: 720,
-      bitrate: 12140000
-    },
-    {
-      index: 2,
-      width: 1920,
-      height: 1080,
-      bitrate: 16120000
-    }
-  ];
-  let currentLevel = -1;
-  let autoLevelCapping = -1;
-  const tech = makeMochTech({ levels: () => levels }, {
-    level: (val) => currentLevel = val,
-    autoLevelCapping: (val) => autoLevelCapping = val
+  function(assert) {
+    const levels = [
+      {
+        index: 0,
+        width: 640,
+        height: 360,
+        bitrate: 865000
+      },
+      {
+        index: 1,
+        width: 1280,
+        height: 720,
+        bitrate: 12140000
+      },
+      {
+        index: 2,
+        width: 1920,
+        height: 1080,
+        bitrate: 16120000
+      }
+    ];
+    let currentLevel = -1;
+    let autoLevelCapping = -1;
+    const tech = makeMochTech({ levels: () => levels }, {
+      level: (val) => {
+        currentLevel = val;
+      },
+      autoLevelCapping: (val) => {
+        autoLevelCapping = val;
+      }
+    });
+    const representations = createRepresentations(tech)();
+
+    assert.deepEqual(representations.map(rep => rep.enabled()), [true, true, true],
+      'all representations enabled on creation');
+    assert.equal(currentLevel, -1, 'auto level mode');
+    assert.equal(autoLevelCapping, -1, 'no autoLevelCapping');
+
+    representations[2].enabled(false);
+    assert.equal(currentLevel, -1,
+      'auto level mode when more than one representation is enabled');
+    assert.equal(autoLevelCapping, 1, 'autoLevelCapping set to highest enabled bitrate');
+
+    representations[2].enabled(true);
+    assert.equal(currentLevel, -1, 'auto level mode when all enabled');
+    assert.equal(autoLevelCapping, -1, 'no autoLevelCapping when all enabled');
+
+    representations[2].enabled(false);
+    representations[0].enabled(false);
+    assert.equal(currentLevel, 1, 'manual level mode when only one enabled representation');
+    assert.equal(autoLevelCapping, -1, 'no autoLevelCapping in manual level mode');
+
+    representations[1].enabled(false);
+    assert.equal(currentLevel, -1, 'auto level mode when all disabled');
+    assert.equal(autoLevelCapping, -1, 'no autoLevelCapping when all disabled');
   });
-  const representations = createRepresentations(tech)();
-
-  assert.deepEqual(representations.map(rep => rep.enabled()), [true, true, true],
-    'all representations enabled on creation');
-  assert.equal(currentLevel, -1, 'auto level mode');
-  assert.equal(autoLevelCapping, -1, 'no autoLevelCapping');
-
-  representations[2].enabled(false);
-  assert.equal(currentLevel, -1,
-    'auto level mode when more than one representation is enabled');
-  assert.equal(autoLevelCapping, 1, 'autoLevelCapping set to highest enabled bitrate');
-
-  representations[2].enabled(true);
-  assert.equal(currentLevel, -1, 'auto level mode when all enabled');
-  assert.equal(autoLevelCapping, -1, 'no autoLevelCapping when all enabled');
-
-  representations[2].enabled(false);
-  representations[0].enabled(false);
-  assert.equal(currentLevel, 1, 'manual level mode when only one enabled representation');
-  assert.equal(autoLevelCapping, -1, 'no autoLevelCapping in manual level mode');
-
-  representations[1].enabled(false);
-  assert.equal(currentLevel, -1, 'auto level mode when all disabled');
-  assert.equal(autoLevelCapping, -1, 'no autoLevelCapping when all disabled');
-});

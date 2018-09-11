@@ -121,7 +121,7 @@ const removeOldCues = function(buffered, track) {
  *
  * @param {QualityLevelList} qualityLevels
  *        The quality levels list
- * @param {String} id
+ * @param {string} id
  *        The id of the new active quality level
  * @function updateSelectedIndex
  */
@@ -163,9 +163,10 @@ const filterRanges = function(timeRanges, predicate) {
 /**
  * Attempts to find the buffered TimeRange that contains the specified
  * time.
+ *
  * @param {TimeRanges} buffered - the TimeRanges object to query
  * @param {number} time  - the time to filter on.
- * @returns {TimeRanges} a new TimeRanges object
+ * @return {TimeRanges} a new TimeRanges object
  */
 const findRange = function(buffered, time) {
   return filterRanges(buffered, function(start, end) {
@@ -179,7 +180,7 @@ export class FlashlsHandler {
     // tech.player() is deprecated but setup a reference to HLS for
     // backwards-compatibility
     if (tech.options_ && tech.options_.playerId) {
-      let _player = videojs(tech.options_.playerId);
+      const _player = videojs(tech.options_.playerId);
 
       if (!_player.hasOwnProperty('hls')) {
         Object.defineProperty(_player, 'hls', {
@@ -253,8 +254,8 @@ export class FlashlsHandler {
    *         Returns the time ranges that can be seeked to.
    */
   seekable() {
-    let seekableStart = this.tech_.el_.vjs_getProperty('seekableStart');
-    let seekableEnd = this.tech_.el_.vjs_getProperty('seekableEnd');
+    const seekableStart = this.tech_.el_.vjs_getProperty('seekableStart');
+    const seekableEnd = this.tech_.el_.vjs_getProperty('seekableEnd');
 
     if (seekableEnd === 0) {
       return videojs.createTimeRange();
@@ -301,7 +302,7 @@ export class FlashlsHandler {
 
       // update initial selected index
       updateSelectedIndex(this.qualityLevels_,
-                          this.tech_.el_.vjs_getProperty('level') + '');
+        this.tech_.el_.vjs_getProperty('level') + '');
     }
 
     setupAudioTracks(this.tech_);
@@ -485,8 +486,8 @@ export class FlashlsHandler {
 
       this.inbandTextTracks_[caption.stream].addCue(
         new window.VTTCue(caption.startPts / 90000,
-                          caption.endPts / 90000,
-                          caption.text));
+          caption.endPts / 90000,
+          caption.text));
     }
   }
 
