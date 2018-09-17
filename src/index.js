@@ -4,6 +4,7 @@ import { CaptionStream } from 'mux.js/lib/m2ts/caption-stream';
 import MetadataStream from 'mux.js/lib/m2ts/metadata-stream';
 import { createRepresentations } from './representations.js';
 import { updateAudioTrack, setupAudioTracks } from './flashlsAudioTracks.js';
+import {version as VERSION} from '../package.json';
 
 /**
  * Define properties on a cue for backwards compatability,
@@ -572,6 +573,6 @@ FlashlsSourceHandler.handleSource = function(source, tech, options) {
 videojs.getTech('Flash').registerSourceHandler(FlashlsSourceHandler, 0);
 
 // Include the version number.
-FlashlsSourceHandler.VERSION = '__VERSION__';
+FlashlsSourceHandler.VERSION = VERSION;
 
 export default FlashlsSourceHandler;
