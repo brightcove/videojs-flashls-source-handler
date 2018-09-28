@@ -1,14 +1,30 @@
 # videojs-flashls-source-handler
 
-[![Build Status][travis-icon]][travis-link]
-[![Slack Status][slack-icon]][slack-link]
+[![Build Status](https://travis-ci.org/brightcove/videojs-flashls-source-handler.svg?branch=master)](https://travis-ci.org/brightcove/videojs-flashls-source-handler)
+[![Greenkeeper badge](https://badges.greenkeeper.io/brightcove/videojs-flashls-source-handler.svg)](https://greenkeeper.io/)
+[![Slack Status](http://slack.videojs.com/badge.svg)](http://slack.videojs.com)
+
+[![NPM](https://nodei.co/npm/@brightcove/videojs-flashls-source-handler.png?downloads=true&downloadRank=true)](https://nodei.co/npm/@brightcove/videojs-flashls-source-handler/)
 
 A source handler to integrate flashls with video.js
+
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Browserify](#browserify)
+  - [RequireJS/AMD](#requirejsamd)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Installation
 
 ```sh
-npm install --save videojs-flashls-source-handler
+npm install --save @brightcove/videojs-flashls-source-handler
 ```
 
 ## Usage
@@ -45,7 +61,7 @@ require('videojs-flash');
 // The actual plugin function is exported by this module, but it is also
 // attached to the `Player.prototype`; so, there is no need to assign it
 // to a variable.
-require('videojs-flashls-source-handler');
+require('@brightcove/videojs-flashls-source-handler');
 
 var player = videojs('my-video', {
   flash: {
@@ -74,7 +90,3 @@ Apache-2.0. Copyright (c) Brightcove
 
 
 [videojs]: http://videojs.com/
-[slack-icon]: http://slack.videojs.com/badge.svg
-[slack-link]: http://slack.videojs.com
-[travis-icon]: https://travis-ci.org/brightcove/videojs-flashls-source-handler.svg?branch=master
-[travis-link]: https://travis-ci.org/brightcove/videojs-flashls-source-handler
