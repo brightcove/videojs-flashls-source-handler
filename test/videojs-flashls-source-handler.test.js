@@ -49,3 +49,25 @@ QUnit.test('triggers an event when bandwidth updates after segment load',
     tech.trigger('fragmentloaded');
     assert.equal(bandwidthupdate, 1, 'tech fired a bandwidthupdate');
   });
+
+QUnit.test('seeks to live point when playhead is outside seekable',
+  function(assert) {
+    let time = 0;
+    const tech = makeMochTech({});
+
+    tech.duration = () => Infinity;
+    tech.currentTime = () => 0;
+    tech.setCurrentTime = (t) => {
+      time = t;
+    };
+
+    const handler = new FlashlsHandler('this.m3u8', tech, {});
+    const seekableStart = 10;
+    const seekableEnd = 20;
+    const seekable = videojs.createTimeRange(seekableStart, seekableEnd);
+
+    handler.seekable = () => seekable;
+
+    tech.trigger('play');
+    assert.equal(time, seekableEnd, 'seeked to live');
+  });

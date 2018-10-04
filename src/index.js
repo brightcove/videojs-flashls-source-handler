@@ -224,6 +224,7 @@ export class FlashlsHandler {
     this.onLevelLoaded_ = this.onLevelLoaded_.bind(this);
     this.onFragmentLoaded_ = this.onFragmentLoaded_.bind(this);
     this.onAudioTrackChanged = this.onAudioTrackChanged.bind(this);
+    this.onPlay_ = this.onPlay_.bind(this);
 
     this.tech_.on('loadedmetadata', this.onLoadedmetadata_);
     this.tech_.on('seeking', this.onSeeking_);
@@ -232,6 +233,7 @@ export class FlashlsHandler {
     this.tech_.on('levelswitch', this.onLevelSwitch_);
     this.tech_.on('levelloaded', this.onLevelLoaded_);
     this.tech_.on('fragmentloaded', this.onFragmentLoaded_);
+    this.tech_.on('play', this.onPlay_);
 
     this.metadataStream_.on('data', this.onMetadataStreamData_);
     this.captionStream_.on('data', this.onCaptionStreamData_);
@@ -246,6 +248,18 @@ export class FlashlsHandler {
       return;
     }
     this.tech_.setSrc(source.src);
+  }
+
+  onPlay_() {
+    // if the viewer has paused and we fell out of the live window,
+    // seek forward to the live point
+    if (this.tech_.duration() === Infinity) {
+      const seekable = this.seekable();
+
+      if (this.tech_.currentTime() < seekable.start(0)) {
+        return this.tech_.setCurrentTime(seekable.end(seekable.length - 1));
+      }
+    }
   }
 
   /**
@@ -501,6 +515,7 @@ export class FlashlsHandler {
     this.tech_.off('levelswitch', this.onLevelSwitch_);
     this.tech_.off('levelloaded', this.onLevelLoaded_);
     this.tech_.off('fragmentloaded', this.onFragmentLoaded_);
+    this.tech_.off('play', this.onPlay_);
 
     if (this.qualityLevels_) {
       this.qualityLevels_.dispose();
