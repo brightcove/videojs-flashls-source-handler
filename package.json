@@ -79,8 +79,8 @@
     "videojs-flash": "^2.1.1",
     "videojs-generate-karma-config": "~3.0.0",
     "videojs-generate-rollup-config": "~2.2.0",
-    "videojs-standard": "~7.1.0",
-    "videojs-generator-verify": "~1.0.4"
+    "videojs-generator-verify": "^1.0.5",
+    "videojs-standard": "~7.1.0"
   },
   "module": "dist/videojs-flashls-source-handler.es.js",
   "browserslist": [
