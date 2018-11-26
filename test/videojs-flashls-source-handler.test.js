@@ -33,7 +33,8 @@ QUnit.test('can get stats from handler', function(assert) {
   assert.deepEqual(handler.stats, stats, 'can get hls.stats');
 });
 
-QUnit.test('triggers an event when bandwidth updates after segment load',
+QUnit.test(
+  'triggers an event when bandwidth updates after segment load',
   function(assert) {
     let bandwidthupdate = 0;
 
@@ -48,9 +49,11 @@ QUnit.test('triggers an event when bandwidth updates after segment load',
 
     tech.trigger('fragmentloaded');
     assert.equal(bandwidthupdate, 1, 'tech fired a bandwidthupdate');
-  });
+  }
+);
 
-QUnit.test('seeks to live point when playhead is outside seekable',
+QUnit.test(
+  'seeks to live point when playhead is outside seekable',
   function(assert) {
     let time = 0;
     const tech = makeMochTech({});
@@ -70,4 +73,5 @@ QUnit.test('seeks to live point when playhead is outside seekable',
 
     tech.trigger('play');
     assert.equal(time, seekableEnd, 'seeked to live');
-  });
+  }
+);
