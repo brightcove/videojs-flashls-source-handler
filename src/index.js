@@ -18,25 +18,19 @@ const deprecateOldCue = function(cue) {
   Object.defineProperties(cue.frame, {
     id: {
       get() {
-        videojs.log.warn(
-          'cue.frame.id is deprecated. Use cue.value.key instead.'
-        );
+        videojs.log.warn('cue.frame.id is deprecated. Use cue.value.key instead.');
         return cue.value.key;
       }
     },
     value: {
       get() {
-        videojs.log.warn(
-          'cue.frame.value is deprecated. Use cue.value.data instead.'
-        );
+        videojs.log.warn('cue.frame.value is deprecated. Use cue.value.data instead.');
         return cue.value.data;
       }
     },
     privateData: {
       get() {
-        videojs.log.warn(
-          'cue.frame.privateData is deprecated. Use cue.value.data instead.'
-        );
+        videojs.log.warn('cue.frame.privateData is deprecated. Use cue.value.data instead.');
         return cue.value.data;
       }
     }
@@ -316,8 +310,10 @@ export class FlashlsHandler {
       });
 
       // update initial selected index
-      updateSelectedIndex(this.qualityLevels_,
-        this.tech_.el_.vjs_getProperty('level') + '');
+      updateSelectedIndex(
+        this.qualityLevels_,
+        this.tech_.el_.vjs_getProperty('level') + ''
+      );
     }
 
     setupAudioTracks(this.tech_);
@@ -426,7 +422,8 @@ export class FlashlsHandler {
       const cue = new window.VTTCue(
         time,
         time + 0.1,
-        frame.value || frame.url || frame.data || '');
+        frame.value || frame.url || frame.data || ''
+      );
 
       cue.frame = frame;
       cue.value = frame;
@@ -499,10 +496,11 @@ export class FlashlsHandler {
 
       removeOldCues(this.tech_.buffered(), this.inbandTextTracks_[caption.stream]);
 
-      this.inbandTextTracks_[caption.stream].addCue(
-        new window.VTTCue(caption.startPts / 90000,
-          caption.endPts / 90000,
-          caption.text));
+      this.inbandTextTracks_[caption.stream].addCue(new window.VTTCue(
+        caption.startPts / 90000,
+        caption.endPts / 90000,
+        caption.text
+      ));
     }
   }
 

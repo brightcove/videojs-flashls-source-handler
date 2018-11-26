@@ -25,14 +25,17 @@ QUnit.module('Flashls Audiotracks', {
   }
 });
 
-QUnit.test('setupAudioTracks does nothing when no audio tracks from swf',
+QUnit.test(
+  'setupAudioTracks does nothing when no audio tracks from swf',
   function(assert) {
     setupAudioTracks(this.tech);
 
     assert.equal(this.vjsAudioTracks.length, 0, 'no videojs audio tracks created');
-  });
+  }
+);
 
-QUnit.test('setupAudioTracks creates videojs audio tracks for each swf audio track',
+QUnit.test(
+  'setupAudioTracks creates videojs audio tracks for each swf audio track',
   function(assert) {
   // org.mangui.hls.model.AudioTrack
     this.swfAudioTracks = [
@@ -127,9 +130,11 @@ QUnit.test('setupAudioTracks creates videojs audio tracks for each swf audio tra
     assert.equal(this.vjsAudioTracks[1].enabled, false, 'Other Audio track are disabled');
     assert.equal(this.vjsAudioTracks[2].id, 'French', 'corrrect id');
     assert.equal(this.vjsAudioTracks[2].enabled, false, 'Other Audio track are disabled');
-  });
+  }
+);
 
-QUnit.test('updateAudioTrack sets audioTrack on swf when videojs audioTrack changes',
+QUnit.test(
+  'updateAudioTrack sets audioTrack on swf when videojs audioTrack changes',
   function(assert) {
   // org.mangui.hls.model.AudioTrack
     this.swfAudioTracks = [
@@ -178,20 +183,27 @@ QUnit.test('updateAudioTrack sets audioTrack on swf when videojs audioTrack chan
 
     this.swfAudioTrack = -1;
     updateAudioTrack(this.tech);
-    assert.equal(this.swfAudioTrack, -1,
-      'When all tracks are disabled, it does not set any track');
+    assert.equal(
+      this.swfAudioTrack, -1,
+      'When all tracks are disabled, it does not set any track'
+    );
 
     this.vjsAudioTracks[1].enabled = true;
     this.vjsAudioTracks[2].enabled = true;
 
     this.swfAudioTrack = -1;
     updateAudioTrack(this.tech);
-    assert.equal(this.swfAudioTrack, 1,
-      'When more than 1 track enabled, set the swf audio track to the first enabled track');
+    assert.equal(
+      this.swfAudioTrack, 1,
+      'When more than 1 track enabled, set the swf audio track to the first enabled track'
+    );
 
     this.vjsAudioTracks[1].enabled = false;
     this.swfAudioTrack = -1;
     updateAudioTrack(this.tech);
-    assert.equal(this.swfAudioTrack, 2,
-      'Correct enabled audio track id after switching tracks');
-  });
+    assert.equal(
+      this.swfAudioTrack, 2,
+      'Correct enabled audio track id after switching tracks'
+    );
+  }
+);

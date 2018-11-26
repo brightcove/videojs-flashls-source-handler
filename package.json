@@ -58,7 +58,7 @@
   "dependencies": {
     "@brightcove/videojs-flashls-swf": "6.4.3",
     "global": "^4.3.2",
-    "mux.js": "^5.0.1",
+    "mux.js": "^4.3.2",
     "video.js": "^6 || ^7"
   },
   "devDependencies": {
