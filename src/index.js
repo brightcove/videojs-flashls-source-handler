@@ -206,6 +206,8 @@ export class FlashlsHandler {
     this.inbandTextTracks_ = {};
     this.metadataStream_ = new MetadataStream();
     this.captionStream_ = new CaptionStream();
+    this.offsetPts = null;
+    this.offsetDts = null;
 
     // bind event listeners to this context
     this.onLoadedmetadata_ = this.onLoadedmetadata_.bind(this);
@@ -467,9 +469,17 @@ export class FlashlsHandler {
    */
   onCaptionData_(event, data) {
     data[0].forEach((d) => {
+      if (!this.offsetPts) {
+        this.offsetPts = d.pos;
+      }
+
+      if (!this.offsetDts) {
+        this.offsetDts = d.dts;
+      }
+
       this.captionStream_.push({
-        pts: d.pos * 90000,
-        dts: d.dts * 90000,
+        pts: (d.pos - this.offsetPts) * 90000,
+        dts: (d.dts - this.offsetDts) * 90000,
         escapedRBSP: stringToByteArray(window.atob(d.data)),
         nalUnitType: 'sei_rbsp'
       });
