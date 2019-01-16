@@ -1,3 +1,6 @@
+<a name="1.4.6"></a>
+## [1.4.6](https://github.com/brightcove/videojs-flashls-source-handler/compare/v1.4.5...v1.4.6) (2019-01-16)
+
 <a name="1.4.5"></a>
 ## [1.4.5](https://github.com/brightcove/videojs-flashls-source-handler/compare/v1.4.4...v1.4.5) (2018-10-04)
 
