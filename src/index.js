@@ -413,7 +413,9 @@ export class FlashlsHandler {
         label: 'Timed Metadata'
       }, false).track;
 
-      this.metadataTrack_.inBandMetadataTrackDispatchType = '';
+      // This value is equivalent to (0x15).toString(16) which comes from mux.js:
+      // https://github.com/videojs/mux.js/blob/668954f45f1dbe3742a4c8b7750d5458075d34db/lib/m2ts/stream-types.js#L6
+      this.metadataTrack_.inBandMetadataTrackDispatchType = '15';
     }
 
     removeOldCues(this.tech_.buffered(), this.metadataTrack_);
