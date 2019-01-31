@@ -1,3 +1,10 @@
+<a name="1.4.7"></a>
+## [1.4.7](https://github.com/brightcove/videojs-flashls-source-handler/compare/v1.4.6...v1.4.7) (2019-01-31)
+
+### Bug Fixes
+
+* Use the same inBandMetadataTrackDispatchType that is exposed by mux.js (#35) ([04fd4c2](https://github.com/brightcove/videojs-flashls-source-handler/commit/04fd4c2)), closes [#35](https://github.com/brightcove/videojs-flashls-source-handler/issues/35)
+
 <a name="1.4.6"></a>
 ## [1.4.6](https://github.com/brightcove/videojs-flashls-source-handler/compare/v1.4.5...v1.4.6) (2019-01-16)
 
