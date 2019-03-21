@@ -55,7 +55,7 @@
     "test/"
   ],
   "dependencies": {
-    "@brightcove/videojs-flashls-swf": "6.4.4",
+    "@brightcove/videojs-flashls-swf": "6.4.5",
     "global": "^4.3.2",
     "mux.js": "^4.3.2",
     "video.js": "^6 || ^7"
