@@ -1,3 +1,10 @@
+<a name="1.4.8"></a>
+## [1.4.8](https://github.com/brightcove/videojs-flashls-source-handler/compare/v1.4.7...v1.4.8) (2019-03-21)
+
+### Chores
+
+* **package:** Update videojs-flashls-swf to 6.4.5 (#42) ([d0cbef6](https://github.com/brightcove/videojs-flashls-source-handler/commit/d0cbef6)), closes [#42](https://github.com/brightcove/videojs-flashls-source-handler/issues/42)
+
 <a name="1.4.7"></a>
 ## [1.4.7](https://github.com/brightcove/videojs-flashls-source-handler/compare/v1.4.6...v1.4.7) (2019-01-31)
 
