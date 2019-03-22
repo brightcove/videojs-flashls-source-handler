@@ -267,12 +267,14 @@ export class FlashlsHandler {
   seekable() {
     const seekableStart = this.tech_.el_.vjs_getProperty('seekableStart');
     const seekableEnd = this.tech_.el_.vjs_getProperty('seekableEnd');
+    const duration = this.tech_.el_.vjs_getProperty('duration');
 
-    if (seekableEnd === 0) {
-      return videojs.createTimeRange();
+    if (seekableEnd !== 0 && duration !== 0) {
+      return videojs.createTimeRange(seekableStart, seekableEnd);
+    } else if (duration !== 0) {
+      return videojs.createTimeRange(0, duration);
     }
-
-    return videojs.createTimeRange(seekableStart, seekableEnd);
+    return videojs.createTimeRange();
   }
 
   media_() {
