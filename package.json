@@ -74,7 +74,7 @@
     "pkg-ok": "^2.2.0",
     "rollup": "^0.67.3",
     "shx": "^0.3.2",
-    "sinon": "^7.1.1",
+    "sinon": "^7.3.2",
     "videojs-flash": "^2.1.1",
     "videojs-generate-karma-config": "~5.1.0",
     "videojs-generate-rollup-config": "^3.1.0",
